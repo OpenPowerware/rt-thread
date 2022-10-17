@@ -8,6 +8,7 @@
  * 2018-09-01     xuzhuoyi     the first version.
  * 2019-07-03     zhaoxiaowei  add support for __rt_ffs.
  * 2019-12-05     xiaolifan    add support for hardware fpu32
+ * 2022-10-17     guyunjie     add support for hardware fpu64 and vcrc
  */
 
 #include <rthw.h>
