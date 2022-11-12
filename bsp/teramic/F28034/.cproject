@@ -109,7 +109,7 @@
                                     									
                                     <listOptionValue builtIn="false" value="&quot;../teramic-drivers/teramic-dsc28034-board/common&quot;"/>
                                     									
-                                    <listOptionValue builtIn="false" value="&quot;${project_loc}/../../../../components/finsh&quot;"/>
+                                    <listOptionValue builtIn="false" value="&quot;../../../../components/finsh&quot;"/>
                                     									
                                     <listOptionValue builtIn="false" value="&quot;../teramic-drivers/teramic-dsc28034-board/DSP2803x_headers/include&quot;"/>
                                     									
