@@ -153,9 +153,8 @@ typedef rt_base_t                       rt_off_t;       /**< Type for offset */
 #define RT_MB_ENTRY_MAX                 RT_UINT16_MAX   /**< Maximum number of mailbox .entry */
 #define RT_MQ_ENTRY_MAX                 RT_UINT16_MAX   /**< Maximum number of message queue .entry */
 
-#define  __TERAMIC__
 #define RT_UNUSED(x)                   ((void)x)
-//#define __TERAMIC__
+
 /* Compiler Related Definitions */
 #if defined(__ARMCC_VERSION)           /* ARM Compiler */
 #define RT_SECTION(x)               __attribute__((section(x)))
@@ -177,13 +176,6 @@ typedef rt_base_t                       rt_off_t;       /**< Type for offset */
 #define RT_WEAK                     __weak
 #define rt_inline                   static inline
 #define RTT_API
-#elif defined (__TERAMIC__)     /* for IAR Compiler */
-#define RT_SECTION(x)               __attribute__((section(x)))
-#define RT_USED                     __attribute__((retain)) __attribute__((used))
-#define ALIGN(n)                    __attribute__((aligned(n)))
-#define RT_WEAK                     __attribute__((weak))
-#define rt_inline                   static __inline
-#define RTT_API
 #elif defined (__GNUC__)                /* GNU GCC Compiler */
 #ifndef RT_USING_LIBC
 /* the version of GNU GCC must be greater than 4.x */
@@ -194,7 +186,7 @@ typedef __gnuc_va_list              va_list;
 #define va_arg(v,l)                 __builtin_va_arg(v,l)
 #endif /* RT_USING_LIBC */
 #define RT_SECTION(x)               __attribute__((section(x)))
-#define RT_USED                     __attribute__((used))
+#define RT_USED                     __attribute__((used)) __attribute__((retain))
 #define ALIGN(n)                    __attribute__((aligned(n)))
 #define RT_WEAK                     __attribute__((weak))
 #define rt_inline                   static __inline

@@ -182,6 +182,8 @@ struct rt_thread main_thread;
 void main_thread_entry(void *parameter)
 {
     extern int main(void);
+    int x = 0;
+    x = x + 1;
 
 #ifdef RT_USING_COMPONENTS_INIT
     /* RT-Thread components initialization */
