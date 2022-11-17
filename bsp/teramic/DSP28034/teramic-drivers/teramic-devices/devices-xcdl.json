@@ -1,0 +1,287 @@
+{
+	"schemaVersion": "0.2.0",
+	"mcus": {
+		"families": {
+			"fe": {
+				"displayName": "Beijing Haawking Technology Co.,Ltd.",
+				"description": "HX2000 DSC with Enhanced control peripherals and High-efficiency 32-bit CPU.",
+				"supplier": {
+					"displayName": "Haawking",
+					"id": "1"
+				},
+				"devices": {
+					"dsc28027": {
+						"displayName": "Haawking DSC28027",
+						"description": "The DSC28027 is the HX2000 32-bit DSP with 120 MHz, 128 KB Flash.",
+						"url": "https://www.haawking.com/",
+						"compiler": {
+							"headers": [
+								
+							],
+							"defines": [
+								"DSC28027"
+							],
+							"target": [
+								"-march=rv32imc",
+								"-mabi=ilp32",
+								"-mcmodel=medany"
+							]
+						},
+						"features": {
+							"arch": "RV32IMC",
+							"width": "32 bits",
+							"hfosc": "12 MHz",
+							"lfosc": "12 MHz",
+							"maxClock": "120 MHz",
+							"package": "lqfn",
+							"leads": "48",
+							"vcc": [
+								"1.8 V",
+								"3.3 V"
+							]
+						},
+						"memoryRegions": {
+							"m0": {
+								"onChip": "true",
+								"address": "0x00000000",
+								"size": "2 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"m1": {
+								"onChip": "true",
+								"address": "0x00000800",
+								"size": "2 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"l0": {
+								"onChip": "true",
+								"address": "0x00010000",
+								"size": "8 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"l1": {
+								"onChip": "true",
+								"address": "0x00012000",
+								"size": "8 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"otp": {
+								"onChip": "true",
+								"address": "0x007a0000",
+								"size": "15.5 KiB",
+								"access": "rwx",
+								"description": "On-Chip Non-Volatile Memory"
+							},
+							"flash": {
+								"onChip": "true",
+								"address": "0x007c0000",
+								"size": "128 KiB",
+								"access": "rwx",
+								"description": "On-Chip Non-Volatile Memory"
+							},
+							"bootrom": {
+								"onChip": "true",
+								"address": "0x007f8000",
+								"maxSize": "32 MiB",
+								"access": "rx",
+								"description": "on-Chip Non-Volatile Memory"
+							}
+						},
+						"debug": {
+							"jtag": {
+								"tapindex": "0",
+								"idcode": "0x7c03",
+								"irlen": "5"
+							},
+							"xsvd": "xsvd/dsc28027-xsvd.json"
+						}
+					},
+					"dsc28034": {
+						"displayName": "Haawking DSC28034",
+						"description": "The DSC28034 is the HX2000 32-bit DSP with 120 MHz, 256 KB Flash.",
+						"url": "https://www.haawking.com/",
+						"compiler": {
+							"headers": [
+								
+							],
+							"defines": [
+								"DSC28034"
+							],
+							"target": [
+								"-march=rv32imc",
+								"-mabi=ilp32",
+								"-mcmodel=medany"
+							]
+						},
+						"features": {
+							"arch": "RV32IMC",
+							"width": "32 bits",
+							"hfosc": "12 MHz",
+							"lfosc": "12 MHz",
+							"maxClock": "120 MHz",
+							"package": "lqfn",
+							"leads": "80",
+							"vcc": [
+								"1.8 V",
+								"3.3 V"
+							]
+						},
+						"memoryRegions": {
+							"m0": {
+								"onChip": "true",
+								"address": "0x00000000",
+								"size": "2 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"m1": {
+								"onChip": "true",
+								"address": "0x00000800",
+								"size": "2 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"l0": {
+								"onChip": "true",
+								"address": "0x00010000",
+								"size": "16 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"l1": {
+								"onChip": "true",
+								"address": "0x00014000",
+								"size": "16 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"otp": {
+								"onChip": "true",
+								"address": "0x007a0000",
+								"size": "15.5 KiB",
+								"access": "rwx",
+								"description": "On-Chip Non-Volatile Memory"
+							},
+							"flash": {
+								"onChip": "true",
+								"address": "0x00700000",
+								"size": "256 KiB",
+								"access": "rwx",
+								"description": "On-Chip Non-Volatile Memory"
+							},
+							"bootrom": {
+								"onChip": "true",
+								"address": "0x007f8000",
+								"maxSize": "32 MiB",
+								"access": "rx",
+								"description": "on-Chip Non-Volatile Memory"
+							}
+						},
+						"debug": {
+							"jtag": {
+								"tapindex": "0",
+								"idcode": "0x1bc03",
+								"irlen": "5"
+							},
+							"xsvd": "xsvd/dsc28034-xsvd.json"
+						}
+					},
+					"dsc28335": {
+						"displayName": "Haawking DSC28335",
+						"description": "The DSC28335 is the HX2000 32-bit DSP with 120 MHz, 256 KB Flash.",
+						"url": "https://www.haawking.com/",
+						"compiler": {
+							"headers": [
+								
+							],
+							"defines": [
+								"DSC28335"
+							],
+							"target": [
+								"-march=rv32imfc",
+								"-mabi=ilp32",
+								"-mcmodel=medany"
+							]
+						},
+						"features": {
+							"arch": "RV32IMFC",
+							"width": "32 bits",
+							"hfosc": "12 MHz",
+							"lfosc": "12 MHz",
+							"maxClock": "200 MHz",
+							"package": "lqfn",
+							"leads": "176",
+							"vcc": [
+								"1.8 V",
+								"3.3 V"
+							]
+						},
+						"memoryRegions": {
+							"m0": {
+								"onChip": "true",
+								"address": "0x00000000",
+								"size": "2 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"m1": {
+								"onChip": "true",
+								"address": "0x00000800",
+								"size": "2 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"l0": {
+								"onChip": "true",
+								"address": "0x00010000",
+								"size": "16 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"l1": {
+								"onChip": "true",
+								"address": "0x00014000",
+								"size": "16 KiB",
+								"access": "rwx",
+								"description": "On-Chip Volatile Memory"
+							},
+							"otp": {
+								"onChip": "true",
+								"address": "0x007a0000",
+								"size": "15.5 KiB",
+								"access": "rwx",
+								"description": "On-Chip Non-Volatile Memory"
+							},
+							"flash": {
+								"onChip": "true",
+								"address": "0x00700000",
+								"size": "256 KiB",
+								"access": "rwx",
+								"description": "On-Chip Non-Volatile Memory"
+							},
+							"bootrom": {
+								"onChip": "true",
+								"address": "0x007f8000",
+								"maxSize": "32 MiB",
+								"access": "rx",
+								"description": "on-Chip Non-Volatile Memory"
+							}
+						},
+						"debug": {
+							"jtag": {
+								"tapindex": "0",
+								"idcode": "0x1bc03",
+								"irlen": "5"
+							},
+							"xsvd": "xsvd/dsc28335-xsvd.json"
+						}
+					},
+				}
+			}
+		}
+	}
+}

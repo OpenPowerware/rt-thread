@@ -1,0 +1,51 @@
+{
+	"schemaVersion": "0.2.0",
+	"license": "MIT",
+	"copyright": "Copyright (c) 2017 Liviu Ionescu",
+	"boards": {
+		"dsc28034": {
+			"displayName": "Haawking DSC28034 Board",
+			"description": "The Haawking DSC28034 Board is an Arduino-Compatible development kit featuring the Haawking DSC28034, the industry's first commercially available RISC-V SoC.",
+			"supplier": {
+				"displayName": "Haawking",
+				"id": "1"
+			},
+			"revision": "A01",
+			"url": "https://www.sifive.com/products/hifive1/",
+			"orderForm": "https://www.crowdsupply.com/sifive/hifive1/",
+			"installedDevice": {
+				"supplier": {
+					"displayName": "Haawking",
+					"id": "1"
+				},
+				"name": "dsc28034"
+			},
+			"compatibleDevices": [],
+			"features": {
+				"flash": {
+					"size": "128 Mb",
+					"interface": "spi0",
+					"memoryRegion": "rom"
+				},
+				"hfxtal": "16 MHz",
+				"lfxtal": "32768 Hz"
+			},
+			"debug": {
+				"interface": "ftdi",
+				"connector": "micro-usb",
+				"openocd": "-f &quot;board/haawking-dsc28034.cfg&quot;",
+				"jlink": {
+				    "device": "dsc28034"
+				}
+			},
+			"compiler": {
+				"headers": [
+					"<DSC28034_headers/include/DSC28034_Device.h>"
+				],
+				"defines": [
+					"DSC28034_BOARD"
+				]
+			}
+		}
+	}
+}

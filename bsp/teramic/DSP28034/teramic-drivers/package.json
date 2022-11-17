@@ -1,0 +1,69 @@
+{
+  "name": "0344444",
+  "version": "1.0.0",
+  "description": "An xPack with a RAM application running on Haawking DSC28034 Board",
+  "main": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "xmake build -- all",
+    "clean": "xmake build -- clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/<user-id>/0344444.git"
+  },
+  "bugs": {
+    "url": "https://github.com/<user-id>/0344444/issues"
+  },
+  "homepage": "https://github.com/<user-id>/0344444",
+  "keywords": [
+    "xpack",
+    "c",
+    "c++",
+    "micro-os-plus",
+    "risc-v",
+    "haawking",
+    "corecomplex"
+  ],
+  "author": {
+    "name": "",
+    "email": "",
+    "url": ""
+  },
+  "contributors": [
+    {
+      "name": "Liviu Ionescu",
+      "email": "ilg@livius.net",
+      "url": "http://liviusdotnet.wordpress.com"
+    }
+  ],
+  "license": "MIT",
+  "config": {
+    "xcdl": {
+      "device": {
+        "id": "dsc28034",
+        "supplier": {
+          "displayName": "Haawking",
+          "id": "1"
+        }
+      },
+      "board": {
+        "id": "dsc28034",
+        "supplier": {
+          "displayName": "Haawking",
+          "id": "1"
+        }
+      }
+    }
+  },
+  "dependencies": {
+      "@micro-os-plus/diag-trace": "~1.0.6"
+  },
+  "devDependencies": {
+    "xmake": "~0.3.10",
+    "@gnu-mcu-eclipse/riscv-none-gcc": "~7.2.0-2.4",
+    "@gnu-mcu-eclipse/openocd": "~0.10.0-7.4",
+    "@gnu-mcu-eclipse/windows-build-tools": "~2.10.1-4"
+  },
+  "xpack": {}
+}

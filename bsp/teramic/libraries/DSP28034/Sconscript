@@ -1,0 +1,68 @@
+import rtconfig
+Import('RTT_ROOT')
+from building import *
+
+# get current directory
+cwd = GetCurrentDir()
+
+# The set of source files associated with this SConscript file.
+src = Split("""
+common/crt.S
+common/syscalls.c
+DSP2803x_common/source/_DSP2803x_usDelay.S
+DSP2803x_common/source/disable_interrupt.S
+DSP2803x_common/source/enable_interrupt.S
+DSP2803x_common/source/ier_set.S
+DSP2803x_common/source/ier_unset.S
+DSP2803x_common/source/ifr_set.S
+DSP2803x_common/source/ifr_unset.S
+DSP2803x_common/source/DSP2803x_Gpio.c
+DSP2803x_common/source/DSP2803x_DefaultIsr.c
+DSP2803x_common/source/DSP2803x_PieCtrl.c
+DSP2803x_common/source/DSP2803x_PieVect.c
+DSP2803x_common/source/DSP2803x_SysCtrl.c
+DSP2803x_common/source/DSP2803x_CpuTimers.c
+DSP2803x_headers/source/DSP2803x_GlobalVariableDefs.c
+ldscripts/DSC28034_BBB_link_FLASH.ld
+""")
+
+# if GetDepend(['BSP_USING_ADC']):
+#     src += ['common/source/F2837xD_Adc.c']
+
+# if GetDepend(['BSP_USING_CAN']):
+#     src += ['common/source/F2837xD_can.c']
+
+#     src += ['common/source/F2837xD_CpuTimers.c']
+
+# if GetDepend(['BSP_USING_DMA']):
+#     src += ['common/source/F2837xD_Dma.c']
+
+# if GetDepend(['BSP_USING_ECAP']):
+#     src += ['common/source/F2837xD_ECap.c']
+
+# if GetDepend(['BSP_USING_PWM']):
+#     src += ['common/source/F2837xD_Epwm.c']
+
+# if GetDepend(['BSP_USING_QEP']):
+#     src += ['common/source/F2837xD_EQep.c']
+
+# if GetDepend(['BSP_USING_I2C']):
+#     src += ['common/source/F2837xD_I2C.c']
+
+# if GetDepend(['BSP_USING_SPI']):
+#     src += ['common/source/F2837xD_Spi.c']
+
+# if GetDepend(['BSP_USING_UART']):
+#     src += ['common/source/F2837xD_Sci.c']
+#     src += ['common/source/F2837xD_sci_io.c']
+    
+path = [
+    cwd + '/common', 
+    cwd + '/DSP2803x_common/include',
+    cwd + '/DSP2803x_headers/include'
+]
+
+CPPDEFINES = ['USE_HAL_DRIVER']
+group = DefineGroup('Libraries', src, depend = [''], CPPPATH = path, CPPDEFINES = CPPDEFINES)
+
+Return('group')

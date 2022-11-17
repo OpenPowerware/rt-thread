@@ -1,0 +1,5 @@
+!lib/*
+Debug/
+.settings/
+openocd.exe.stackdump
+makefile.targets
