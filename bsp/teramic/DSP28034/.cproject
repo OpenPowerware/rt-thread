@@ -136,6 +136,10 @@
                                     <listOptionValue builtIn="false" value="&quot;../../libraries/HAL_Drivers&quot;"/>
                                     									                                    									                                    									
                                     <listOptionValue builtIn="false" value="&quot;../board&quot;"/>
+
+                                    <listOptionValue builtIn="false" value="&quot;../&quot;"/>
+
+                                    <listOptionValue builtIn="false" value="&quot;../../../../include&quot;"/>
                                     									                                    									
                                     <listOptionValue builtIn="false" value="&quot;../../libraries/DSP28034/common&quot;"/>
                                     									
