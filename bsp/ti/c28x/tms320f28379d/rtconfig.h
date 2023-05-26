@@ -139,9 +139,6 @@
 /* u8g2: a monochrome graphic library */
 
 
-/* PainterEngine: A cross-platform graphics application framework written in C language */
-
-
 /* tools packages */
 
 
@@ -161,11 +158,19 @@
 
 /* peripheral libraries and drivers */
 
+/* sensors drivers */
+
+
+/* touch drivers */
+
 
 /* Kendryte SDK */
 
 
 /* AI packages */
+
+
+/* Signal Processing and Control Algorithm Packages */
 
 
 /* miscellaneous packages */
@@ -178,6 +183,40 @@
 /* entertainment: terminal games and other interesting software packages */
 
 
+/* Arduino libraries */
+
+
+/* Projects */
+
+
+/* Sensors */
+
+
+/* Display */
+
+
+/* Timing */
+
+
+/* Data Processing */
+
+
+/* Data Storage */
+
+/* Communication */
+
+
+/* Device Control */
+
+
+/* Other */
+
+
+/* Signal IO */
+
+
+/* Uncategorized */
+
 /* Hardware Drivers Config */
 
 /* Onboard Peripheral Drivers */
@@ -188,24 +227,39 @@
 #define BSP_USING_UART
 #define BSP_USING_UART1
 #define BSP_USING_PWM
-#define BSP_USING_PWM1
+#define BSP_USING_PWM4
 
-/* Basic settings for PWM1 */
+/* Basic settings for PWM4 */
 
-#define BSP_PWM1_INIT_PERIOD 10000
-#define BSP_PWM1_INIT_PULSE 1000
+#define BSP_PWM4_INIT_PERIOD 10000
+#define BSP_PWM4_INIT_PULSE 5000
 
-/* Advanced Settings for PWM1 */
+/* Advanced Settings for PWM4 */
 
-#define BSP_PWM1_HSPCLKDIV1
-#define BSP_PWM1_HSPCLKDIV 0
-#define BSP_PWM1_CLKDIV1
-#define BSP_PWM1_CLKDIV 0
-#define BSP_PWM1_CTR_MODE_UPDOWN
-#define BSP_PWM1_CTRMODE 2
-#define BSP_PWM1_CC_CTR_ZERO
-#define BSP_PWM1_LOADAMODE 0
-#define BSP_PWM1_DB 100
+#define BSP_PWM4_IT_ENABLE
+#define BSP_PWM4_INTSEL_ET_CTR_ZERO
+#define BSP_PWM4_INTSEL 1
+#define BSP_PWM4_INT_ET_1ST
+#define BSP_PWM4_INTPRD 1
+#define BSP_PWM4_HSPCLKDIV1
+#define BSP_PWM4_HSPCLKDIV 0
+#define BSP_PWM4_CLKDIV1
+#define BSP_PWM4_CLKDIV 0
+#define BSP_PWM4_CTR_MODE_UPDOWN
+#define BSP_PWM4_CTRMODE 2
+#define BSP_PWM4_CC_CTR_ZERO
+#define BSP_PWM4_LOADAMODE 0
+#define BSP_PWM4_DB 100
+#define BSP_PWM4_ADC_TRIGGER
+#define BSP_PWM4_SOCASEL_ET_CTR_ZERO
+#define BSP_PWM4_SOCASEL 1
+#define BSP_PWM4_SOCA_ET_1ST
+#define BSP_PWM4_SOCAPRD 1
+#define BSP_USING_ADC
+#define BSP_USING_ADC1
+#define BSP_ADC_USING_12BIT
+#define BSP_USING_ADC2
+#define BSP_USING_ADC3
 
 /* Board extended module Drivers */
 
