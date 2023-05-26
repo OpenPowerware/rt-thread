@@ -50,20 +50,20 @@ extern float eqep_setup();
 
 void print_float(char *str, float y)
 {
-    int x;
+    long x;
 
 
     rt_kprintf(str);
 
     if(y >= 0.0f)
     {
-        x = (int)(y * 1000.0f);
-        rt_kprintf("%hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
+        x = (long)(y * 1000.0f);
+        rt_kprintf("%d.%d%d%d\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
     }
     else
     {
-        x = (int)(-y * 1000.0f);
-        rt_kprintf("-%hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
+        x = (long)(-y * 1000.0f);
+        rt_kprintf("-%d.%d%d%d\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
     }
 }
 
