@@ -227,6 +227,24 @@
 #define BSP_USING_UART
 #define BSP_USING_UART1
 #define BSP_USING_PWM
+#define BSP_USING_PWM1
+
+/* Basic settings for PWM1 */
+
+#define BSP_PWM1_INIT_PERIOD 10000
+#define BSP_PWM1_INIT_PULSE 1000
+
+/* Advanced Settings for PWM1 */
+
+#define BSP_PWM1_HSPCLKDIV1
+#define BSP_PWM1_HSPCLKDIV 0
+#define BSP_PWM1_CLKDIV1
+#define BSP_PWM1_CLKDIV 0
+#define BSP_PWM1_CTR_MODE_UPDOWN
+#define BSP_PWM1_CTRMODE 2
+#define BSP_PWM1_CC_CTR_ZERO
+#define BSP_PWM1_LOADAMODE 0
+#define BSP_PWM1_DB 100
 #define BSP_USING_PWM4
 
 /* Basic settings for PWM4 */

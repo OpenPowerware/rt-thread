@@ -57,9 +57,16 @@ static int set_torque(int argc, char *argv[]) {
 
     torque_cmd = atof(argv[1]);
 
-    x = (int)(torque_cmd * 1000.0f);
-
-    rt_kprintf("Torque command set to: %hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
+    if(torque_cmd >= 0.0f)
+    {
+        x = (int)(torque_cmd * 1000.0f);
+        rt_kprintf("Torque command set to: %hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
+    }
+    else
+    {
+        x = (int)(-torque_cmd * 1000.0f);
+        rt_kprintf("Torque command set to: -%hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
+    }
 
     return 0;
 }
