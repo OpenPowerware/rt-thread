@@ -139,9 +139,6 @@
 /* u8g2: a monochrome graphic library */
 
 
-/* PainterEngine: A cross-platform graphics application framework written in C language */
-
-
 /* tools packages */
 
 
@@ -161,11 +158,19 @@
 
 /* peripheral libraries and drivers */
 
+/* sensors drivers */
+
+
+/* touch drivers */
+
 
 /* Kendryte SDK */
 
 
 /* AI packages */
+
+
+/* Signal Processing and Control Algorithm Packages */
 
 
 /* miscellaneous packages */
@@ -177,6 +182,40 @@
 
 /* entertainment: terminal games and other interesting software packages */
 
+
+/* Arduino libraries */
+
+
+/* Projects */
+
+
+/* Sensors */
+
+
+/* Display */
+
+
+/* Timing */
+
+
+/* Data Processing */
+
+
+/* Data Storage */
+
+/* Communication */
+
+
+/* Device Control */
+
+
+/* Other */
+
+
+/* Signal IO */
+
+
+/* Uncategorized */
 
 /* Hardware Drivers Config */
 
@@ -206,6 +245,24 @@
 #define BSP_PWM1_CC_CTR_ZERO
 #define BSP_PWM1_LOADAMODE 0
 #define BSP_PWM1_DB 100
+#define BSP_USING_PWM4
+
+/* Basic settings for PWM4 */
+
+#define BSP_PWM4_INIT_PERIOD 10000
+#define BSP_PWM4_INIT_PULSE 1000
+
+/* Advanced Settings for PWM4 */
+
+#define BSP_PWM4_HSPCLKDIV1
+#define BSP_PWM4_HSPCLKDIV 0
+#define BSP_PWM4_CLKDIV1
+#define BSP_PWM4_CLKDIV 0
+#define BSP_PWM4_CTR_MODE_UPDOWN
+#define BSP_PWM4_CTRMODE 2
+#define BSP_PWM4_CC_CTR_ZERO
+#define BSP_PWM4_LOADAMODE 0
+#define BSP_PWM4_DB 100
 
 /* Board extended module Drivers */
 
