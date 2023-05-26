@@ -13,12 +13,28 @@
 #define __BOARD_H__
 
 #include <rtthread.h>
-
+#include "F28x_Project.h"
 
 extern int __ebss_end;
 extern int __heap_end;
 
+#define GPIO_HIGH   1
+#define GPIO_LOW    0
+#define GPIO_OUTPUT 1
+#define GPIO_INPUT  0
+
 extern void rt_hw_board_init(void);
+
+inline void gpio_config(uint16_t pin, uint16_t mux, uint16_t cpu, uint16_t value, uint16_t output, uint16_t flags)
+{
+    /*This function can only be called from cpu1 */
+
+    GPIO_SetupPinMux(pin, cpu, mux);
+    GPIO_SetupPinOptions(pin, output, flags);
+    GPIO_WritePin(pin,value);
+}
+
+#define PI 3.14159265358979323846f
 
 #endif
 

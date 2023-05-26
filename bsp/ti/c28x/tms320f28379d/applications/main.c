@@ -14,20 +14,8 @@
 #include <stdlib.h>
 #include <rthw.h>
 #include <rtthread.h>
-#include "board.h"
 #include <math.h>
-
-typedef struct
-{
-    float a;
-    float b;
-    float c;
-    float d;
-    float q;
-    float theta;
-} abc_dq_t;
-
-#define PI 3.14159265358979323846f
+#include "board.h"
 
 #define ABC2DQ(x) do { \
     (x)->d = 2.0f / 3.0f * ((x)->a * cosf((x)->theta) + \
@@ -44,11 +32,42 @@ typedef struct
     (x)->c = (x)->d * cosf((x)->theta + 2.0f * PI / 3.0f) - (x)->q * sinf((x)->theta + 2.0f * PI / 3.0f); \
 } while(0)
 
+typedef struct
+{
+    float a;
+    float b;
+    float c;
+    float d;
+    float q;
+    float theta;
+} abc_dq_t;
+
 float torque_cmd;
 
-static int set_torque(int argc, char *argv[]) {
+extern float eqep_get_angle();
+extern float eqep_get_speed();
+extern float eqep_setup();
 
+void print_float(char *str, float y)
+{
     int x;
+
+
+    rt_kprintf(str);
+
+    if(y >= 0.0f)
+    {
+        x = (int)(y * 1000.0f);
+        rt_kprintf("%hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
+    }
+    else
+    {
+        x = (int)(-y * 1000.0f);
+        rt_kprintf("-%hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
+    }
+}
+
+static int set_torque(int argc, char *argv[]) {
 
     if(argc != 2) {
         rt_kprintf("Usage: set_torque <value>\n");
@@ -56,27 +75,40 @@ static int set_torque(int argc, char *argv[]) {
     }
 
     torque_cmd = atof(argv[1]);
-
-    if(torque_cmd >= 0.0f)
-    {
-        x = (int)(torque_cmd * 1000.0f);
-        rt_kprintf("Torque command set to: %hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
-    }
-    else
-    {
-        x = (int)(-torque_cmd * 1000.0f);
-        rt_kprintf("Torque command set to: -%hd.%hd%hd%hd\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
-    }
+    print_float("Torque command set to: ",torque_cmd);
 
     return 0;
 }
-MSH_CMD_EXPORT(set_torque, "Set the value of a global parameter");
+MSH_CMD_EXPORT(set_torque, "Set torque command (pu)");
 
+static int get_angle(int argc, char *argv[]) {
+
+    float angle;
+
+    angle = eqep_get_angle();
+    print_float("Angle (rad) = ", angle);
+
+    return 0;
+}
+MSH_CMD_EXPORT(get_angle, "Get angle feedback (rad)");
+
+static int get_speed(int argc, char *argv[]) {
+
+    float angle;
+
+    angle = eqep_get_angle();
+    print_float("speed (rad/s) = ", angle);
+
+    return 0;
+}
+MSH_CMD_EXPORT(get_speed, "Get speed feedback (rad/s)");
 
 
 int main(void)
 {
     unsigned long x=10000;
+
+    eqep_setup();
 
     while(x)
     {
