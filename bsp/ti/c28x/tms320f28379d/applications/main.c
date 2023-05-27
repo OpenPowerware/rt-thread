@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <rthw.h>
 #include <rtthread.h>
 #include <math.h>
@@ -88,20 +89,14 @@ extern float eqep_setup();
 
 void print_float(char *str, float y)
 {
-    long x;
+    char strf[20];
+
+    sprintf(strf, "%e", y);
 
     rt_kprintf(str);
+    rt_kprintf(strf);
+    rt_kprintf("\n");
 
-    if(y >= 0.0f)
-    {
-        x = (long)(y * 1000.0f);
-        rt_kprintf("%d.%d%d%d\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
-    }
-    else
-    {
-        x = (long)(-y * 1000.0f);
-        rt_kprintf("-%d.%d%d%d\n", x/1000,(x%1000)/100,(x%100)/10,x%10);
-    }
 }
 
 static int set_torque(int argc, char *argv[]) {
@@ -175,6 +170,6 @@ int main(void)
 
     eqep_setup();
 
- }
+}
 
 /*@}*/
