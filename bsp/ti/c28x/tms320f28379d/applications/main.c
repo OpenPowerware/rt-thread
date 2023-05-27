@@ -63,7 +63,6 @@ typedef struct
     float c;
     float d;
     float q;
-    float theta;
 } abc_dq_t;
 
 typedef struct
@@ -89,19 +88,26 @@ extern float eqep_setup();
 
 void print_float(char *str, float y)
 {
-    char strf[20];
+    /* do not use sprintf: it may cause problems */
 
-    float abs_y = fabsf(y);
-
-    if((abs_y > 1000.0 || abs_y < 0.001) && abs_y != 0.0)
-        sprintf(strf, "%e", y);
-    else
-        sprintf(strf, "%.7f", y);
+    long x;
 
     rt_kprintf(str);
-    rt_kprintf(strf);
-    rt_kprintf("\n");
 
+    if(fabsf(y) > 100000)
+    {
+        rt_kprintf("%d\n",(long)y);
+    }
+    else if(y >= 0.0f)
+    {
+        x = (long)(y * 10000.0f);
+        rt_kprintf("%d.%d%d%d%d\n", x/10000,(x%10000)/1000,(x%1000)/100,(x%100)/10,x%10);
+    }
+    else
+    {
+        x = (long)(-y * 10000.0f);
+        rt_kprintf("-%d.%d%d%d%d\n", x/10000,(x%10000)/1000,(x%1000)/100,(x%100)/10,x%10);
+    }
 }
 
 static int set_torque(int argc, char *argv[]) {
@@ -148,7 +154,6 @@ interrupt void adc_isr(void)
     current.a = 0.0f;
     current.b = 0.0f;
     current.c = 0.0f;
-    current.theta = eqep_get_angle();
     ABC2DQ(current,0.0);
 
 }
@@ -160,6 +165,9 @@ int main(void)
     abc_dq_t current;
     abc_dq_t voltage;
 
+    eqep_setup();
+
+
     float angle = eqep_get_angle();
 
     current.a = 0.5;
@@ -167,13 +175,6 @@ int main(void)
     current.c = -0.6;
     ABC2DQ(current,angle);
     ABC2DQ(voltage,angle);
-
-    print_float("", current.d);
-    print_float("", current.q);
-    print_float("", voltage.d);
-    print_float("", voltage.q);
-
-    eqep_setup();
 
 }
 
