@@ -17,19 +17,42 @@
 #include <math.h>
 #include "board.h"
 
-#define ABC2DQ(x) do { \
-    (x)->d = 2.0f / 3.0f * ((x)->a * cosf((x)->theta) + \
-                            (x)->b * cosf((x)->theta - 2.0f * PI / 3.0f) + \
-                            (x)->c * cosf((x)->theta + 2.0f * PI / 3.0f)); \
-    (x)->q =-2.0f / 3.0f * ((x)->a * sinf((x)->theta) + \
-                            (x)->b * sinf((x)->theta - 2.0f * PI / 3.0f) + \
-                            (x)->c * sinf((x)->theta + 2.0f * PI / 3.0f)); \
+
+#define ABC2DQ(x,theta) do { \
+    (x).d = (2.0f/3.0f) * ((x).a * __cospuf32(theta) + \
+                           (x).b * __cospuf32(theta-1.0f/3.0f) + \
+                           (x).c * __cospuf32(theta+1.0f/3.0f)); \
+    (x).q =-(2.0f/3.0f) * ((x).a * __sinpuf32(theta) + \
+                           (x).b * __sinpuf32(theta-1.0f/3.0f) + \
+                           (x).c * __sinpuf32(theta+1.0f/3.0f)); \
 } while(0)
 
-#define DQ2ABC(x) do { \
-    (x)->a = (x)->d * cosf((x)->theta) - (x)->q * sinf((x)->theta); \
-    (x)->b = (x)->d * cosf((x)->theta - 2.0f * PI / 3.0f) - (x)->q * sinf((x)->theta - 2.0f * PI / 3.0f); \
-    (x)->c = (x)->d * cosf((x)->theta + 2.0f * PI / 3.0f) - (x)->q * sinf((x)->theta + 2.0f * PI / 3.0f); \
+#define DQ2ABC(x,theta) do { \
+    (x).a = (x).d * __cospuf32(theta) - (x).q * __sinpuf32((x).theta); \
+    (x).b = (x).d * __cospuf32(theta - 1.0f/3.0f) - (x).q * __sinpuf32((x).theta - 1.0f/3.0f); \
+    (x).c = (x).d * __cospuf32(theta + 1.0f/3.0f) - (x).q * __sinpuf32((x).theta + 1.0f/3.0f); \
+} while(0)
+
+#define PID_UPDATE(x) do { \
+    (x).yp = (x).kp * (x).u; \
+    (x).yi = (x).yi + (x).ki * (x).u; \
+    (x).yd = (x).kd * ((x).u - (x).uh); \
+    (x).uh = (x).u; \
+    (x).yi = __fmin((x).yi,(x).y_max); \
+    (x).yi = __fmax((x).yi,(x).y_min); \
+    (x).y  = (x).yp + (x).yi + (x).yd; \
+    (x).y = __fmin((x).y,(x).y_max); \
+    (x).y = __fmax((x).y,(x).y_min); \
+} while(0)
+
+#define PID_INIT(x,kp,ki,kd,y_max,y_min,yi,uh) do { \
+    (x).kp = (kp); \
+    (x).ki = (ki); \
+    (x).kd = (kd); \
+    (x).y_max = (y_max); \
+    (x).y_min = (y_min); \
+    (x).yi = (yi); \
+    (x).uh = (uh); \
 } while(0)
 
 typedef struct
@@ -42,6 +65,21 @@ typedef struct
     float theta;
 } abc_dq_t;
 
+typedef struct
+{
+    float u;
+    float y;
+    float uh;
+    float yp;
+    float yi;
+    float yd;
+    float y_max;
+    float y_min;
+    float kp;
+    float ki;
+    float kd;
+} pid_ctl_t;
+
 float torque_cmd;
 
 extern float eqep_get_angle();
@@ -51,7 +89,6 @@ extern float eqep_setup();
 void print_float(char *str, float y)
 {
     long x;
-
 
     rt_kprintf(str);
 
@@ -74,7 +111,7 @@ static int set_torque(int argc, char *argv[]) {
         return -1;
     }
 
-    torque_cmd = atof(argv[1]);
+    torque_cmd = strtof(argv[1],NULL);
     print_float("Torque command set to: ",torque_cmd);
 
     return 0;
@@ -94,26 +131,50 @@ MSH_CMD_EXPORT(get_angle, "Get angle feedback (rad)");
 
 static int get_speed(int argc, char *argv[]) {
 
-    float angle;
+    float speed;
 
-    angle = eqep_get_angle();
-    print_float("speed (rad/s) = ", angle);
+    speed = eqep_get_speed();
+    print_float("speed (rad/s) = ", speed);
 
     return 0;
 }
 MSH_CMD_EXPORT(get_speed, "Get speed feedback (rad/s)");
 
+interrupt void adc_isr(void)
+{
+    abc_dq_t current;
+    abc_dq_t voltage;
+
+    current.a = 0.0f;
+    current.b = 0.0f;
+    current.c = 0.0f;
+    current.theta = eqep_get_angle();
+    ABC2DQ(current,0.0);
+
+}
+
 
 int main(void)
 {
-    unsigned long x=10000;
+
+    abc_dq_t current;
+    abc_dq_t voltage;
+
+    float angle = eqep_get_angle();
+
+    current.a = 0.5;
+    current.b = 0.1;
+    current.c = -0.6;
+    ABC2DQ(current,angle);
+    ABC2DQ(voltage,angle);
+
+    print_float("", current.d);
+    print_float("", current.q);
+    print_float("", voltage.d);
+    print_float("", voltage.q);
 
     eqep_setup();
 
-    while(x)
-    {
-        x--;
-    }
-}
+ }
 
 /*@}*/
