@@ -52,8 +52,8 @@ void eqep_setup(void)
     qep_half_counts_int32_minus = -qep_half_counts_int32;
 
     qep_total_counts_float = (float)(2000*4);
-    qep_angle_coef_float = 2.0 * PI * 4.0 / qep_total_counts_float;
-    qep_speed_coef_float = qep_angle_coef_float * (200e6 / 200000);
+    qep_angle_coef_float = 1.0 / qep_total_counts_float;            //mech angle, pu
+    qep_speed_coef_float = qep_angle_coef_float * (200e6 / 200000); //mech speed, Hz
 
     EQep1Regs.QUTMR = 0;
     EQep1Regs.QUPRD = 200000;             // 2000000 Unit Timer for 1000Hz at 200 MHz SYSCLKOUT

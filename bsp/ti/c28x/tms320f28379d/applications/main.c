@@ -8,6 +8,7 @@
  * 2006-08-31     Bernard      first implementation
  * 2018-09-02     xuzhuoyi     modify for TMS320F28379D version
  * 2022-08-21     qiyu         modify the entry function
+ * 2023-05-27     YunjieGu     Motor Control Demo
  */
 
 #include <stdint.h>
@@ -17,54 +18,79 @@
 #include <rtthread.h>
 #include <math.h>
 #include "board.h"
+#include "applications.h"
 
+float ppair = 4;
+float rpm = 6000;
 
-#define ABC2DQ(x,theta) do { \
-    (x).d = (2.0f/3.0f) * ((x).a * __cospuf32(theta) + \
-                           (x).b * __cospuf32(theta-1.0f/3.0f) + \
-                           (x).c * __cospuf32(theta+1.0f/3.0f)); \
-    (x).q =-(2.0f/3.0f) * ((x).a * __sinpuf32(theta) + \
-                           (x).b * __sinpuf32(theta-1.0f/3.0f) + \
-                           (x).c * __sinpuf32(theta+1.0f/3.0f)); \
-} while(0)
+static float speed_cmd = 0;
+static int count = 0;
+static abc_dq_t current;
+static abc_dq_t voltage;
+static pid_ctl_t pid_current_d;
+static pid_ctl_t pid_current_q;
+static pid_ctl_t pid_speed;
 
-#define DQ2ABC(x,theta) do { \
-    (x).a = (x).d * __cospuf32(theta) - (x).q * __sinpuf32(theta); \
-    (x).b = (x).d * __cospuf32(theta - 1.0f/3.0f) - (x).q * __sinpuf32(theta - 1.0f/3.0f); \
-    (x).c = (x).d * __cospuf32(theta + 1.0f/3.0f) - (x).q * __sinpuf32(theta + 1.0f/3.0f); \
-} while(0)
+static void print_float(char *str, float y);
 
-#define PID_UPDATE(x) do { \
-    (x).yp = (x).kp * (x).u; \
-    (x).yi = (x).yi + (x).ki * (x).u; \
-    (x).yd = (x).kd * ((x).u - (x).uh); \
-    (x).uh = (x).u; \
-    (x).yi = __fmin((x).yi,(x).y_max); \
-    (x).yi = __fmax((x).yi,(x).y_min); \
-    (x).y  = (x).yp + (x).yi + (x).yd; \
-    (x).y = __fmin((x).y,(x).y_max); \
-    (x).y = __fmax((x).y,(x).y_min); \
-} while(0)
+interrupt void main_isr(void)
+{
+    float angle_e = eqep_get_angle() * ppair;
+    float speed_m = eqep_get_speed();
+    float torque_cmd;
 
-#define PID_INIT(x,_kp,_ki,_kd,_y_max,_y_min,_yi,_uh) do { \
-    (x).kp = (_kp); \
-    (x).ki = (_ki); \
-    (x).kd = (_kd); \
-    (x).y_max = (_y_max); \
-    (x).y_min = (_y_min); \
-    (x).yi = (_yi); \
-    (x).uh = (_uh); \
-} while(0)
+    if(!(count % 10))
+    {
+        /* speed pid control */
+        pid_speed.u = speed_cmd - speed_m;
+        PID_UPDATE(pid_speed);
+        torque_cmd = pid_speed.y;
+    }
 
-float torque_cmd;
+    /* current measure and transformation */
+    inv_get_current(&current);
+    ABC2DQ(current,angle_e);
 
-extern float eqep_get_angle();
-extern float eqep_get_speed();
-extern float eqep_setup();
-extern void inv_set_duty(abc_dq_t *);
-extern void inv_get_current(abc_dq_t *);
+    /* current (torque) pid control */
+    pid_current_d.u = 0.0 - current.d;
+    pid_current_q.u = torque_cmd - current.q;
+    PID_UPDATE(pid_current_d);
+    PID_UPDATE(pid_current_q);
 
-void print_float(char *str, float y)
+    /* voltage command inverse transformation */
+    voltage.d = pid_current_d.y;
+    voltage.q = pid_current_q.y;
+    DQ2ABC(voltage,angle_e);
+
+    /* inverter pwm control */
+    inv_set_duty(&voltage);
+
+    count = (count++) % 100;
+}
+
+int main(void)
+{
+    float fm0 = rpm/60;
+    float fe0 = fm0*ppair;
+    float Xpu = 0.50;
+    float Lpu = Xpu/fe0;
+
+    float kp_current = Lpu * 1000 ;
+    float ki_current = kp_current *250*2*PI;
+    float kp_speed = 1e-4;
+    float ki_speed = kp_speed *2*2*PI;
+
+    float Ts = 100e-6;
+
+    PID_INIT(pid_current_d,Ts   , kp_current,ki_current,0.0, 2/__sqrt(3),-2/__sqrt(3), 0.0,0.0);
+    PID_INIT(pid_current_q,Ts   , kp_current,ki_current,0.0, 2/__sqrt(3),-2/__sqrt(3), 0.0,0.0);
+    PID_INIT(pid_speed    ,Ts*10, kp_speed  ,ki_speed  ,0.0, 1.0        ,-1.0        , 0.0,0.0);
+
+    eqep_setup();
+    inv_setup();
+}
+
+static void print_float(char *str, float y)
 {
     /* do not use sprintf: it may cause problems */
 
@@ -88,81 +114,45 @@ void print_float(char *str, float y)
     }
 }
 
-static int set_torque(int argc, char *argv[]) {
+static int set_speed(int argc, char *argv[])
+{
+    float _speed_cmd;
 
     if(argc != 2) {
-        rt_kprintf("Usage: set_torque <value>\n");
+        rt_kprintf("Usage: set_speed <value>\n");
         return -1;
     }
 
-    torque_cmd = strtof(argv[1],NULL);
-    torque_cmd = __fmin(torque_cmd,1.0);
-    torque_cmd = __fmax(torque_cmd,-1.0);
+    _speed_cmd = strtof(argv[1],NULL);
+    _speed_cmd = __fmin(_speed_cmd,6000.0);
+    _speed_cmd = __fmax(_speed_cmd,-6000.0);
 
-    print_float("Torque command set to: ",torque_cmd);
+    print_float("Speed command set to (RPM): ",_speed_cmd);
+
+    speed_cmd = _speed_cmd/60; //RPM2HZ
 
     return 0;
 }
-MSH_CMD_EXPORT(set_torque, "Set torque command (pu)");
+MSH_CMD_EXPORT(set_speed, "Set speed command");
 
-static int get_angle(int argc, char *argv[]) {
-
+static int get_angle(int argc, char *argv[])
+{
     float angle;
 
     angle = eqep_get_angle();
-    print_float("Angle (rad) = ", angle);
+    print_float("Mech angle (pu) = ", angle);
 
     return 0;
 }
-MSH_CMD_EXPORT(get_angle, "Get angle feedback (rad)");
+MSH_CMD_EXPORT(get_angle, "Get angle feedback");
 
-static int get_speed(int argc, char *argv[]) {
-
+static int get_speed(int argc, char *argv[])
+{
     float speed;
 
     speed = eqep_get_speed();
-    print_float("speed (rad/s) = ", speed);
+    print_float("Mech speed (RPM) = ", speed*60);
 
     return 0;
 }
-MSH_CMD_EXPORT(get_speed, "Get speed feedback (rad/s)");
-
-interrupt void adc_isr(void)
-{
-}
-
-
-int main(void)
-{
-
-    abc_dq_t current;
-    abc_dq_t voltage;
-    pid_ctl_t pid_id;
-    pid_ctl_t pid_iq;
-
-    eqep_setup();
-
-    PID_INIT(pid_id,0.0,0.0,0.0,1.0,-1.0,0.0,0.0);
-    PID_INIT(pid_iq,0.0,0.0,0.0,1.0,-1.0,0.0,0.0);
-
-    float angle = eqep_get_angle();
-
-    inv_get_current(&current);
-
-    ABC2DQ(current,angle);
-
-    pid_id.u = 0.0 - current.d;
-    pid_iq.u = torque_cmd - current.q;
-
-    PID_UPDATE(pid_id);
-    PID_UPDATE(pid_iq);
-
-    voltage.d = pid_id.y;
-    voltage.q = pid_iq.y;
-
-    DQ2ABC(voltage,angle);
-
-    inv_set_duty(&voltage);
-}
-
-/*@}*/
+MSH_CMD_EXPORT(get_speed, "Get speed feedback");
