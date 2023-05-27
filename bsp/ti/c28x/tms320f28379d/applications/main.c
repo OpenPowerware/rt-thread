@@ -91,7 +91,12 @@ void print_float(char *str, float y)
 {
     char strf[20];
 
-    sprintf(strf, "%e", y);
+    float abs_y = fabsf(y);
+
+    if((abs_y > 1000.0 || abs_y < 0.001) && abs_y != 0.0)
+        sprintf(strf, "%e", y);
+    else
+        sprintf(strf, "%.7f", y);
 
     rt_kprintf(str);
     rt_kprintf(strf);
