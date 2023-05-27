@@ -18,6 +18,30 @@
 extern int __ebss_end;
 extern int __heap_end;
 
+typedef struct
+{
+    float a;
+    float b;
+    float c;
+    float d;
+    float q;
+} abc_dq_t;
+
+typedef struct
+{
+    float u;
+    float y;
+    float uh;
+    float yp;
+    float yi;
+    float yd;
+    float y_max;
+    float y_min;
+    float kp;
+    float ki;
+    float kd;
+} pid_ctl_t;
+
 #define GPIO_HIGH   1
 #define GPIO_LOW    0
 #define GPIO_OUTPUT 1

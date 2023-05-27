@@ -29,9 +29,9 @@
 } while(0)
 
 #define DQ2ABC(x,theta) do { \
-    (x).a = (x).d * __cospuf32(theta) - (x).q * __sinpuf32((x).theta); \
-    (x).b = (x).d * __cospuf32(theta - 1.0f/3.0f) - (x).q * __sinpuf32((x).theta - 1.0f/3.0f); \
-    (x).c = (x).d * __cospuf32(theta + 1.0f/3.0f) - (x).q * __sinpuf32((x).theta + 1.0f/3.0f); \
+    (x).a = (x).d * __cospuf32(theta) - (x).q * __sinpuf32(theta); \
+    (x).b = (x).d * __cospuf32(theta - 1.0f/3.0f) - (x).q * __sinpuf32(theta - 1.0f/3.0f); \
+    (x).c = (x).d * __cospuf32(theta + 1.0f/3.0f) - (x).q * __sinpuf32(theta + 1.0f/3.0f); \
 } while(0)
 
 #define PID_UPDATE(x) do { \
@@ -46,45 +46,23 @@
     (x).y = __fmax((x).y,(x).y_min); \
 } while(0)
 
-#define PID_INIT(x,kp,ki,kd,y_max,y_min,yi,uh) do { \
-    (x).kp = (kp); \
-    (x).ki = (ki); \
-    (x).kd = (kd); \
-    (x).y_max = (y_max); \
-    (x).y_min = (y_min); \
-    (x).yi = (yi); \
-    (x).uh = (uh); \
+#define PID_INIT(x,_kp,_ki,_kd,_y_max,_y_min,_yi,_uh) do { \
+    (x).kp = (_kp); \
+    (x).ki = (_ki); \
+    (x).kd = (_kd); \
+    (x).y_max = (_y_max); \
+    (x).y_min = (_y_min); \
+    (x).yi = (_yi); \
+    (x).uh = (_uh); \
 } while(0)
-
-typedef struct
-{
-    float a;
-    float b;
-    float c;
-    float d;
-    float q;
-} abc_dq_t;
-
-typedef struct
-{
-    float u;
-    float y;
-    float uh;
-    float yp;
-    float yi;
-    float yd;
-    float y_max;
-    float y_min;
-    float kp;
-    float ki;
-    float kd;
-} pid_ctl_t;
 
 float torque_cmd;
 
 extern float eqep_get_angle();
 extern float eqep_get_speed();
 extern float eqep_setup();
+extern void inv_set_duty(abc_dq_t *);
+extern void inv_get_current(abc_dq_t *);
 
 void print_float(char *str, float y)
 {
@@ -118,6 +96,9 @@ static int set_torque(int argc, char *argv[]) {
     }
 
     torque_cmd = strtof(argv[1],NULL);
+    torque_cmd = __fmin(torque_cmd,1.0);
+    torque_cmd = __fmax(torque_cmd,-1.0);
+
     print_float("Torque command set to: ",torque_cmd);
 
     return 0;
@@ -148,14 +129,6 @@ MSH_CMD_EXPORT(get_speed, "Get speed feedback (rad/s)");
 
 interrupt void adc_isr(void)
 {
-    abc_dq_t current;
-    abc_dq_t voltage;
-
-    current.a = 0.0f;
-    current.b = 0.0f;
-    current.c = 0.0f;
-    ABC2DQ(current,0.0);
-
 }
 
 
@@ -164,18 +137,32 @@ int main(void)
 
     abc_dq_t current;
     abc_dq_t voltage;
+    pid_ctl_t pid_id;
+    pid_ctl_t pid_iq;
 
     eqep_setup();
 
+    PID_INIT(pid_id,0.0,0.0,0.0,1.0,-1.0,0.0,0.0);
+    PID_INIT(pid_iq,0.0,0.0,0.0,1.0,-1.0,0.0,0.0);
 
     float angle = eqep_get_angle();
 
-    current.a = 0.5;
-    current.b = 0.1;
-    current.c = -0.6;
-    ABC2DQ(current,angle);
-    ABC2DQ(voltage,angle);
+    inv_get_current(&current);
 
+    ABC2DQ(current,angle);
+
+    pid_id.u = 0.0 - current.d;
+    pid_iq.u = torque_cmd - current.q;
+
+    PID_UPDATE(pid_id);
+    PID_UPDATE(pid_iq);
+
+    voltage.d = pid_id.y;
+    voltage.q = pid_iq.y;
+
+    DQ2ABC(voltage,angle);
+
+    inv_set_duty(&voltage);
 }
 
 /*@}*/
