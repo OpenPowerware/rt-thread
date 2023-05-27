@@ -94,6 +94,20 @@ static rt_int16_t c28x_adc_get_vref (struct rt_adc_device *device)
     return 3300;
 }
 
+static rt_int16_t c28x_adc_set_trig (struct rt_adc_device *device,rt_uint32_t trig_source)
+{
+    /*
+     * TODO
+     * Get Vref
+     */
+    RT_ASSERT(device);
+    struct c28x_adc *c28x_adc_handler = (struct c28x_adc*)device->parent.user_data;
+    volatile struct ADC_REGS *c28x_adc_regs = c28x_adc_handler->adc_regs;
+    //设置trig source
+    return RT_EOK;
+}
+
+
 static rt_err_t c28x_adc_get_value(struct rt_adc_device *device, rt_uint32_t channel, rt_uint32_t *value)
 {
     RT_ASSERT(device != RT_NULL);
@@ -134,6 +148,7 @@ static const struct rt_adc_ops stm_adc_ops =
     .convert = c28x_adc_get_value,
     .get_resolution = c28x_adc_get_resolution,
     .get_vref = c28x_adc_get_vref,
+    .set_trig = c28x_adc_set_trig
 };
 
 static rt_err_t HAL_ADC_Init(volatile struct ADC_REGS *c28x_adc_handler)

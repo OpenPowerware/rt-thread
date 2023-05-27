@@ -296,6 +296,34 @@ rt_err_t rt_pwm_get(struct rt_device_pwm *device, struct rt_pwm_configuration *c
     return result;
 }
 
+rt_err_t rt_pwm_enable_trig(struct rt_device_pwm *device)
+{
+    rt_err_t result = RT_EOK;
+
+    if (!device)
+    {
+        return -RT_EIO;
+    }
+
+    result = rt_device_control(&device->parent, PWM_CMD_ENABLE_TRIG);
+
+    return result;
+}
+
+rt_err_t rt_pwm_disable_trig(struct rt_device_pwm *device)
+{
+    rt_err_t result = RT_EOK;
+
+    if (!device)
+    {
+        return -RT_EIO;
+    }
+
+    result = rt_device_control(&device->parent, PWM_CMD_DISABLE_TRIG);
+
+    return result;
+}
+
 #ifdef RT_USING_FINSH
 #include <stdlib.h>
 #include <string.h>
@@ -402,6 +430,16 @@ static int pwm(int argc, char **argv)
                     result_str = (result == RT_EOK) ? "success" : "failure";
                     rt_kprintf("%s dead_time is set %d \n", pwm_device->parent.parent.name, (rt_base_t)atoi(argv[3]));
                 }
+            }else if(!strcmp(argv[1], "enable_trig"))
+            {
+                result = rt_pwm_enable_trig(pwm_device);
+                result_str = (result == RT_EOK) ? "success" : "failure";
+                rt_kprintf("%s's external ADC trigger has been enabled\n", pwm_device->parent.parent.name);
+            }else if(!strcmp(argv[1], "disable_trig"))
+            {
+                result = rt_pwm_disable_trig(pwm_device);
+                result_str = (result == RT_EOK) ? "success" : "failure";
+                rt_kprintf("%s's external ADC trigger has been disabled\n", pwm_device->parent.parent.name);
             }
             else
             {
@@ -413,6 +451,8 @@ static int pwm(int argc, char **argv)
                 rt_kprintf("pwm set        <channel> <period> <pulse>   - set pwm channel info\n");
                 rt_kprintf("pwm phase      <channel> <phase>            - set pwm phase\n");
                 rt_kprintf("pwm dead_time  <channel> <dead_time>        - set pwm dead time\n");
+                rt_kprintf("pwm enable_trig                             - enable pwm trigger ADC\n");
+                rt_kprintf("pwm disable_trig                            - disable pwm trigger ADC\n");
                 result = - RT_ERROR;
             }
         }
@@ -427,6 +467,8 @@ static int pwm(int argc, char **argv)
         rt_kprintf("pwm set        <channel> <period> <pulse>  - set pwm channel info\n");
         rt_kprintf("pwm phase      <channel> <phase>           - set pwm phase\n");
         rt_kprintf("pwm dead_time  <channel> <dead_time>       - set pwm dead time\n");
+        rt_kprintf("pwm enable_trig                            - enable pwm trigger ADC\n");
+        rt_kprintf("pwm disable_trig                           - disable pwm trigger ADC\n");
         result = - RT_ERROR;
     }
 

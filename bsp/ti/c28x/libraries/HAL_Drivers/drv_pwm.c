@@ -320,6 +320,33 @@ static rt_err_t drv_pwm_enable(volatile struct EPWM_REGS *epwm,rt_bool_t enable)
     return RT_EOK;
 }
 
+static rt_err_t drv_pwm_enable_trig(volatile struct EPWM_REGS *epwm,rt_bool_t enable)
+{
+    /*
+    * TODO
+    * Still not sure about how to stop PWM in C2000
+    */
+    if(epwm == RT_NULL)
+    {
+        return -RT_ERROR;
+    }
+    if(enable == RT_TRUE)
+    {
+        /* clear trip zone flag */
+        EALLOW;
+        // epwm->TZCLR.bit.OST = 1;
+        EDIS;
+    }
+    else
+    {
+        /* set trip zone flag */
+        EALLOW;
+        // epwm->TZFRC.bit.OST = 1;
+        EDIS;
+    }
+    return RT_EOK;
+}
+
 static rt_err_t drv_pwm_control(struct rt_device_pwm *device, int cmd, void *arg)
 {
     struct rt_pwm_configuration *configuration = (struct rt_pwm_configuration *)arg;
@@ -347,6 +374,10 @@ static rt_err_t drv_pwm_control(struct rt_device_pwm *device, int cmd, void *arg
         return drv_pwm_enable_irq((struct EPWM_REGS *)(pwm->pwm_regs), RT_TRUE);
     case PWM_CMD_DISABLE_IRQ:
         return drv_pwm_enable_irq((struct EPWM_REGS *)(pwm->pwm_regs), RT_FALSE);
+    case PWM_CMD_ENABLE_TRIG:
+        return drv_pwm_enable_trig((struct EPWM_REGS *)(pwm->pwm_regs), RT_TRUE);
+    case PWM_CMD_DISABLE_TRIG:
+        return drv_pwm_enable_trig((struct EPWM_REGS *)(pwm->pwm_regs), RT_FALSE);
     default:
         return RT_EINVAL;
     }

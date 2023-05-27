@@ -71,6 +71,12 @@ static rt_err_t _adc_control(rt_device_t dev, int cmd, void *args)
             *((rt_int16_t *) args) = value;
             result = RT_EOK;
         }
+    }else if (cmd == RT_ADC_CMD_SET_TRIG && adc->ops->set_trig)
+    {
+        result = adc->ops->set_trig(adc, (rt_uint32_t)args, RT_TRUE);
+    }else if (cmd == RT_ADC_CMD_CLR_TRIG && adc->ops->set_trig)
+    {
+        result = adc->ops->set_trig(adc, (rt_uint32_t)args, RT_FALSE);
     }
 
     return result;
@@ -162,6 +168,17 @@ rt_err_t rt_adc_disable(rt_adc_device_t dev, rt_uint32_t channel)
     return result;
 }
 
+rt_err_t rt_adc_set_trig(rt_adc_device_t dev, rt_uint32_t channel,rt_bool_t trig_enable)
+{
+    rt_err_t result = RT_EOK;
+
+    RT_ASSERT(dev);
+
+    result = dev->ops->set_trig(dev, channel, trig_enable);
+
+    return result;
+}
+
 rt_int16_t rt_adc_voltage(rt_adc_device_t dev, rt_uint32_t channel)
 {
     rt_uint32_t value = 0;
@@ -196,6 +213,7 @@ static int adc(int argc, char **argv)
 {
     int value = 0;
     rt_int16_t voltage = 0;
+    rt_int16_t src = 0;
     rt_err_t result = -RT_ERROR;
     static rt_adc_device_t adc_device = RT_NULL;
     char *result_str;
@@ -271,6 +289,30 @@ static int adc(int argc, char **argv)
                 else
                 {
                     rt_kprintf("adc convert voltage <channel> \n");
+                }
+            }else if (!strcmp(argv[1], "set_trig"))
+            {
+                if(argc == 3)
+                {
+                    result = rt_adc_set_trig(adc_device, atoi(argv[2]),RT_TRUE);
+                    result_str = (result == RT_EOK) ? "success" : "failure";
+                    rt_kprintf("%s trigger source has been set to %d\n", adc_device->parent.parent.name, (rt_base_t)atoi(argv[2]));
+                }
+                else
+                {
+                    rt_kprintf("adc set trigger source <channel> \n");
+                }
+            }else if (!strcmp(argv[1], "clr_trig"))
+            {
+                if(argc >= 2)
+                {
+                    result = rt_adc_set_trig(adc_device, 0,RT_FALSE);
+                    result_str = (result == RT_EOK) ? "success" : "failure";
+                    rt_kprintf("%s trigger source has been clear\n", adc_device->parent.parent.name);
+                }
+                else
+                {
+                    rt_kprintf("adc clear trigger source \n");
                 }
             }
             else
