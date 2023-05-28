@@ -66,6 +66,11 @@ interrupt void main_isr(void)
     inv_set_duty(&voltage);
 
     count = (count++) % 100;
+
+    EALLOW;
+    PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;
+    AdcaRegs.ADCINTFLGCLR.bit.ADCINT1 = 1;
+    EDIS;
 }
 
 int main(void)
@@ -86,8 +91,8 @@ int main(void)
     PID_INIT(pid_current_q,Ts   , kp_current,ki_current,0.0, 2/__sqrt(3),-2/__sqrt(3), 0.0,0.0);
     PID_INIT(pid_speed    ,Ts*10, kp_speed  ,ki_speed  ,0.0, 1.0        ,-1.0        , 0.0,0.0);
 
-    eqep_setup();
     inv_setup();
+    eqep_setup();
 }
 
 static void print_float(char *str, float y)

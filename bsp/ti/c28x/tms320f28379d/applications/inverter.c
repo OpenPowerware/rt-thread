@@ -55,19 +55,13 @@ typedef struct {
 } pwm_param_t;
 
 int16_t pwm_pin_table[] = {
-    -1,         //EPWM0
-    145,        //EPWM1
-    147,        //EPWM2
-    149,        //EPWM3
-    151,        //EPWM4
-    -1,         //EPWM5
-    -1,         //EPWM6
-    -1,         //EPWM7
-    -1,         //EPWM8
-    16,         //EPWM9
-    18,         //EPWM10
-    20,         //EPWM11
-    22,         //EPWM12
+    -1,        //EPWM0
+    -1,        //EPWM1
+    -1,        //EPWM2
+    -1,        //EPWM3
+    6,         //EPWM4
+    8,         //EPWM5
+    10,        //EPWM6
 };
 
 int16_t pwm_mux_table[] = {
@@ -78,12 +72,6 @@ int16_t pwm_mux_table[] = {
     1,         //EPWM4
     1,         //EPWM5
     1,         //EPWM6
-    1,         //EPWM7
-    1,         //EPWM8
-    5,         //EPWM9
-    5,         //EPWM10
-    5,         //EPWM11
-    5,         //EPWM12
 };
 
 #define PWM_PIN(x) EPWM##x
@@ -135,7 +123,6 @@ void inv_get_current(abc_dq_t * current)
 
 void inv_setup(void)
 {
-
     adc_setup();
     pwm_setup();
 
@@ -143,6 +130,7 @@ void inv_setup(void)
     PieVectTable.ADCA1_INT = &main_isr;
     PieCtrlRegs.PIEIER1.bit.INTx1 = 1;
     IER |= M_INT1;
+    CpuSysRegs.PCLKCR0.bit.TBCLKSYNC = 1;
     EDIS;
 }
 
@@ -228,9 +216,9 @@ static void pwm_config(pwm_param_t * param){
     pwm_reg->DCACTL.bit.EVT1SRCSEL=0;           // Source signal is unfiltered.
     pwm_reg->DCACTL.bit.EVT1FRCSYNCSEL=1;       // DC input signal is not synced with TBCLK
     pwm_reg->TZSEL.bit.DCAEVT1=1;               // Enable DCAEVT1 as one-shot-trip source for this ePWM module
-    pwm_reg->TZSEL.bit.CBC1=1;                  // Enable TZ1 as cycle-by-cycle trip: emulate external enable chip;
-    pwm_reg->TZSEL.bit.CBC2=1;                  // Enable TZ2 as cycle-by-cycle trip: for emergency stop;
-    pwm_reg->TZSEL.bit.CBC3=1;                  // Enable TZ3 as cycle-by-cycle trip: for emergency stop;
+    pwm_reg->TZSEL.bit.CBC1=0;                  // Disable TZ3 as cycle-by-cycle trip
+    pwm_reg->TZSEL.bit.CBC2=0;                  // Disable TZ3 as cycle-by-cycle trip
+    pwm_reg->TZSEL.bit.CBC3=0;                  // Disable TZ3 as cycle-by-cycle trip
     pwm_reg->TZCTL.bit.TZA=2;                   // EPWMxA will be forced low on a trip event.
     pwm_reg->TZCTL.bit.TZB=2;                   // EPWMxB will be forced low on a trip event.
     pwm_reg->ETCLR.all = 0xFFFF;                // Clear all events
@@ -297,6 +285,11 @@ static void adc_config(adc_param_t * param)
 static void pwm_setup(void)
 {
     pwm_param_t param;
+
+    EALLOW;
+    CpuSysRegs.PCLKCR0.bit.TBCLKSYNC = 0;
+    EDIS;
+
     param.pwm_set.bit.sync = 0;
     param.pwm_set.bit.mode = 1; //non-inverted
     param.pwm_set.bit.div = 0;
