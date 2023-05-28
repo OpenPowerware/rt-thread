@@ -22,7 +22,7 @@
 
 float ppair = 4;
 float rpm = 6000;
-float Ts = 100e-6;
+float Ts = 10e-6;
 float speed_cmd = 20.0;
 float torque_cmd = 0.0;
 float speed_m;
@@ -67,7 +67,7 @@ interrupt void main_isr(void)
     DQ2ABC(voltage,angle_e);
 
     /* inverter pwm control */
-    inv_set_duty(&voltage,1.0/Ts);
+    inv_set_duty(&voltage, 100000000*Ts);
 
     /* update timer */
     count = (count++) % 100;
@@ -95,7 +95,7 @@ int main(void)
     PID_INIT(pid_current_q,Ts   , kp_current,ki_current,0.0, MOD_INDEX*2/__sqrt(3),-MOD_INDEX*2/__sqrt(3), 0.0,0.0);
     PID_INIT(pid_speed    ,Ts*10, kp_speed  ,ki_speed  ,0.0, 0.0                  ,0.0                  , 0.0,0.0);
 
-    eqep_setup(Ts*10);
+    eqep_setup(1e-3);
     inv_setup(Ts);
 }
 

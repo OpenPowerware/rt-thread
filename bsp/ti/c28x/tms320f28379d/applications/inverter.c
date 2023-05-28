@@ -109,24 +109,29 @@ inline void inv_enable(int16_t status)
     GPIO_WritePin(PIN_INV_EN,status);
 }
 
+void over_current_protect(void)
+{
+    //inv_enable(1);
+}
+
 interrupt void adca_evt_isr(void)
 {
-    inv_enable(1);
+    over_current_protect();
 }
 
 interrupt void adcb_evt_isr(void)
 {
-    inv_enable(1);
+    over_current_protect();
 }
 
 interrupt void adcc_evt_isr(void)
 {
-    inv_enable(1);
+    over_current_protect();
 }
 
 interrupt void adcd_evt_isr(void)
 {
-    inv_enable(1);
+    over_current_protect();
 }
 
 void inv_set_duty(abc_dq_t * voltage, float period)
@@ -339,7 +344,7 @@ static void pwm_setup(float Ts)
     param.dead_time = 5;
     param.base_period = 100000000*Ts;
     param.default_phase = 0;
-    param.default_duty = 5000;
+    param.default_duty = param.base_period/2;
 
     int i;
     for (i = 4; i <= 6; i++) {
@@ -356,8 +361,8 @@ static void adc_setup(void)
     param.adc_set.bit.trigger = 0xB; //PWM4A
     param.adc_set.bit.protect = 0x3;
     param.adc_set.bit.soc = 1;
-    param.th_low  = 2048-1500;
-    param.th_high = 2048+1500;
+    param.th_low  = 10;
+    param.th_high = 2040;
 
     int i;
     for(i = 1; i<=4; i++)
