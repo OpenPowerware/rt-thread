@@ -1,5 +1,7 @@
 #include "board.h"
 
+#define PIN_INV_EN 26
+
 extern interrupt void main_isr(void);
 static void pwm_setup(void);
 static void adc_setup(void);
@@ -15,8 +17,7 @@ union adc_union
         uint16_t adcx:3;
         uint16_t ACQPS:8;
         uint16_t protect:2;
-        uint16_t inten:1;
-        uint16_t resrv:5;
+        uint16_t resrv:6;
     } bit;
 };
 
@@ -92,30 +93,41 @@ int16_t adc_chn_table[] = {
 
 #define PPB_CONFIG(adc_reg, param, ppb_num) \
     do { \
-        adc_reg->ADCPPB##ppb_num##CONFIG.bit.CONFIG = 0; \
+        adc_reg->ADCPPB##ppb_num##CONFIG.bit.CONFIG = (ppb_num)-1; \
         adc_reg->ADCPPB##ppb_num##OFFREF = 0; \
-        \
-        if (param->adc_set.bit.protect == 1) { \
-            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = 1; \
-            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = 1; \
-        } \
-        else if (param->adc_set.bit.protect == 2) { \
-            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = 1; \
-            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = 0; \
-        } \
-        else if (param->adc_set.bit.protect == 3) { \
-            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = 0; \
-            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = 1; \
-        } \
-        else { \
-            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = 0; \
-            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = 0; \
-        } \
-        \
+        adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = param->adc_set.bit.protect & 0x1; \
+        adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = param->adc_set.bit.protect >> 1; \
+        adc_reg->ADCEVTINTSEL.bit.PPB##ppb_num##TRIPHI = param->adc_set.bit.protect & 0x1; \
+        adc_reg->ADCEVTINTSEL.bit.PPB##ppb_num##TRIPLO = param->adc_set.bit.protect >> 1; \
         adc_reg->ADCPPB##ppb_num##TRIPHI.bit.LIMITHI = param->th_high; \
         adc_reg->ADCPPB##ppb_num##TRIPLO.bit.LIMITLO = param->th_low; \
     } while(0)
 
+inline void inv_enable(int16_t status)
+{
+    /* 0: enable; 1: disable */
+    GPIO_WritePin(PIN_INV_EN,status);
+}
+
+interrupt void adca_evt_isr(void)
+{
+    inv_enable(1);
+}
+
+interrupt void adcb_evt_isr(void)
+{
+    inv_enable(1);
+}
+
+interrupt void adcc_evt_isr(void)
+{
+    inv_enable(1);
+}
+
+interrupt void adcd_evt_isr(void)
+{
+    inv_enable(1);
+}
 
 void inv_set_duty(abc_dq_t * voltage)
 {
@@ -133,12 +145,16 @@ void inv_setup(void)
     adc_setup();
     pwm_setup();
 
+    gpio_config(PIN_INV_EN,0,GPIO_MUX_CPU1,GPIO_HIGH,GPIO_OUTPUT,GPIO_SYNC);
+
     EALLOW;
     PieVectTable.ADCA1_INT = &main_isr;
     PieCtrlRegs.PIEIER1.bit.INTx1 = 1;
     IER |= M_INT1;
     CpuSysRegs.PCLKCR0.bit.TBCLKSYNC = 1;
     EDIS;
+
+    inv_enable(0);
 }
 
 static void pwm_config(pwm_param_t * param){
@@ -321,8 +337,7 @@ static void adc_setup(void)
 
     param.adc_set.bit.ACQPS = 0x15;
     param.adc_set.bit.trigger = 0xB; //PWM4A
-    param.adc_set.bit.inten = 1;
-    param.adc_set.bit.protect = 1;
+    param.adc_set.bit.protect = 0x3;
     param.adc_set.bit.soc = 1;
     param.th_low  = 2048-1500;
     param.th_high = 2048+1500;
@@ -334,4 +349,19 @@ static void adc_setup(void)
         param.adc_set.bit.channel = adc_chn_table[i-1];        
         adc_config(&param);
     }
+
+    EALLOW;
+
+    PieVectTable.ADCA_EVT_INT = &adca_evt_isr;
+    PieVectTable.ADCB_EVT_INT = &adcb_evt_isr;
+    PieVectTable.ADCC_EVT_INT = &adcc_evt_isr;
+    PieVectTable.ADCD_EVT_INT = &adcd_evt_isr;
+    PieCtrlRegs.PIEIER10.bit.INTx1 = 1;  // enable adca event interrupt
+    PieCtrlRegs.PIEIER10.bit.INTx5 = 1;  // enable adcb event interrupt
+    PieCtrlRegs.PIEIER10.bit.INTx9 = 1;  // enable adcc event interrupt
+    PieCtrlRegs.PIEIER10.bit.INTx13 = 1; // enable adcd event interrupt
+
+    IER |= M_INT10;
+
+    EDIS;
 }
