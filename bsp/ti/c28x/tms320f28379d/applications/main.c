@@ -144,6 +144,27 @@ static int set_speed(int argc, char *argv[])
 }
 MSH_CMD_EXPORT(set_speed, "Set speed command");
 
+static int set_torque(int argc, char *argv[])
+{
+    float _torque_cmd;
+
+    if(argc != 2) {
+        rt_kprintf("Usage: set_torque <value>\n");
+        return -1;
+    }
+
+    _torque_cmd = strtof(argv[1],NULL);
+    _torque_cmd = __fmin(_torque_cmd,1.0);
+    _torque_cmd = __fmax(_torque_cmd,-1.0);
+
+    print_float("Torque command set to (pu): ",_torque_cmd);
+
+    torque_cmd = _torque_cmd;
+
+    return 0;
+}
+MSH_CMD_EXPORT(set_torque, "Set torque command");
+
 static int get_angle(int argc, char *argv[])
 {
     float angle;
