@@ -74,11 +74,18 @@ int16_t pwm_mux_table[] = {
     1,         //EPWM6
 };
 
+int16_t adc_chn_table[] = {
+    4,         //ADCA
+    4,         //ADCB
+    4,         //ADCC
+    15,        //ADCD 
+};
+
 #define PWM_PIN(x) EPWM##x
 
 #define SOC_CONFIG(adc_reg, param, soc_num) \
     do { \
-        adc_reg->ADCSOC##soc_num##CTL.bit.CHSEL = param->adc_set.bit.channel - 1; \
+        adc_reg->ADCSOC##soc_num##CTL.bit.CHSEL = param->adc_set.bit.channel; \
         adc_reg->ADCSOC##soc_num##CTL.bit.ACQPS = param->adc_set.bit.ACQPS; \
         adc_reg->ADCSOC##soc_num##CTL.bit.TRIGSEL = param->adc_set.bit.trigger + 4; \
     } while(0)  
@@ -317,18 +324,14 @@ static void adc_setup(void)
     param.adc_set.bit.inten = 1;
     param.adc_set.bit.protect = 1;
     param.adc_set.bit.soc = 1;
-    param.adc_set.bit.channel = 4;
     param.th_low  = 2048-1500;
     param.th_high = 2048+1500;
 
     int i;
-    for(i = 1; i<4; i++)
+    for(i = 1; i<=4; i++)
     {
         param.adc_set.bit.adcx = i;
+        param.adc_set.bit.channel = adc_chn_table[i-1];        
         adc_config(&param);
     }
-
-    param.adc_set.bit.adcx = 4; //ADC D
-    param.adc_set.bit.channel = 15;
-    adc_config(&param);
 }
