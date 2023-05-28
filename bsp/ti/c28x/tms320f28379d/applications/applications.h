@@ -8,13 +8,14 @@
 #ifndef APPLICATIONS_APPLICATIONS_H_
 #define APPLICATIONS_APPLICATIONS_H_
 
+#define MOD_INDEX 0.9
 
 extern float eqep_get_angle();
 extern float eqep_get_speed();
-extern float eqep_setup();
-extern void inv_set_duty(abc_dq_t *);
+extern float eqep_setup(float);
+extern void inv_set_duty(abc_dq_t *, float);
 extern void inv_get_current(abc_dq_t *);
-extern void inv_setup(void);
+extern void inv_setup(float);
 
 #define ABC2DQ(x,theta) do { \
     (x).d = (2.0f/3.0f) * ((x).a * __cospuf32(theta) + \

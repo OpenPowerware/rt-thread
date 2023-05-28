@@ -3,7 +3,7 @@
 #define PIN_INV_EN 26
 
 extern interrupt void main_isr(void);
-static void pwm_setup(void);
+static void pwm_setup(float);
 static void adc_setup(void);
 
 union adc_union
@@ -129,21 +129,38 @@ interrupt void adcd_evt_isr(void)
     inv_enable(1);
 }
 
-void inv_set_duty(abc_dq_t * voltage)
+void inv_set_duty(abc_dq_t * voltage, float period)
 {
+    float abc_min;
+    float abc_max;
+    float abc_shf;
+
+    abc_max = __fmax(voltage->a,voltage->b);
+    abc_max = __fmax(abc_max,voltage->c);
+
+    abc_min = __fmax(voltage->a,voltage->b);
+    abc_min = __fmax(abc_min,voltage->c);
+
+    abc_shf = -(abc_max + abc_min)/2.0 + 1.0;
+
+    period = period / 2.0;
+
+    EPwm4Regs.CMPA.bit.CMPA = (voltage->a + abc_shf) * period;
+    EPwm5Regs.CMPA.bit.CMPA = (voltage->b + abc_shf) * period;
+    EPwm6Regs.CMPA.bit.CMPA = (voltage->c + abc_shf) * period;
 }
 
 void inv_get_current(abc_dq_t * current)
 {
-    current->a = 1.0;
-    current->b = -0.5;
-    current->c = -0.5;
+    current->a = ((int16_t)(0x08C4 - AdccResultRegs.ADCRESULT0))/800.0;
+    current->b = ((int16_t)(0x08C6 - AdcbResultRegs.ADCRESULT0))/800.0;
+    current->c = ((int16_t)(0x08C0 - AdcaResultRegs.ADCRESULT0))/800.0;
 }
 
-void inv_setup(void)
+void inv_setup(float Ts)
 {
     adc_setup();
-    pwm_setup();
+    pwm_setup(Ts);
 
     gpio_config(PIN_INV_EN,0,GPIO_MUX_CPU1,GPIO_HIGH,GPIO_OUTPUT,GPIO_SYNC);
 
@@ -305,7 +322,7 @@ static void adc_config(adc_param_t * param)
     EDIS;
 }
 
-static void pwm_setup(void)
+static void pwm_setup(float Ts)
 {
     pwm_param_t param;
 
@@ -320,7 +337,7 @@ static void pwm_setup(void)
     param.pwm_set.bit.trigger_A = 1;
     param.pwm_set.bit.trigger_B = 1;
     param.dead_time = 5;
-    param.base_period = 10000;
+    param.base_period = 100000000*Ts;
     param.default_phase = 0;
     param.default_duty = 5000;
 

@@ -22,30 +22,34 @@
 
 float ppair = 4;
 float rpm = 6000;
-
-static float speed_cmd = 0;
-static int count = 0;
-static abc_dq_t current;
-static abc_dq_t voltage;
-static pid_ctl_t pid_current_d;
-static pid_ctl_t pid_current_q;
-static pid_ctl_t pid_speed;
+float Ts = 100e-6;
+float speed_cmd = 20.0;
+float torque_cmd = 0.0;
+float speed_m;
+float angle_e;
+float angle_e_cal = 0.04;
+float time = 0.0;
+int count = 0;
+abc_dq_t current;
+abc_dq_t voltage;
+pid_ctl_t pid_current_d;
+pid_ctl_t pid_current_q;
+pid_ctl_t pid_speed;
 
 static void print_float(char *str, float y);
 
 interrupt void main_isr(void)
 {
-    float angle_e = eqep_get_angle() * ppair;
-    float speed_m = eqep_get_speed();
-    float torque_cmd;
+    speed_m = eqep_get_speed();
+    angle_e = eqep_get_angle() * ppair + angle_e_cal;
 
-    if(!(count % 10))
-    {
-        /* speed pid control */
-        pid_speed.u = speed_cmd - speed_m;
-        PID_UPDATE(pid_speed);
-        torque_cmd = pid_speed.y;
-    }
+//    if(!(count % 10))
+//    {
+//        /* speed pid control */
+//        pid_speed.u = speed_cmd - speed_m;
+//        PID_UPDATE(pid_speed);
+//        torque_cmd = pid_speed.y;
+//    }
 
     /* current measure and transformation */
     inv_get_current(&current);
@@ -63,9 +67,11 @@ interrupt void main_isr(void)
     DQ2ABC(voltage,angle_e);
 
     /* inverter pwm control */
-    inv_set_duty(&voltage);
+    inv_set_duty(&voltage,1.0/Ts);
 
+    /* update timer */
     count = (count++) % 100;
+    time += Ts;
 
     EALLOW;
     PieCtrlRegs.PIEACK.all = PIEACK_GROUP1;
@@ -77,22 +83,20 @@ int main(void)
 {
     float fm0 = rpm/60;
     float fe0 = fm0*ppair;
-    float Xpu = 0.50;
+    float Xpu = 0.1;
     float Lpu = Xpu/fe0;
 
-    float kp_current = Lpu * 1000 ;
+    float kp_current = Lpu * 1000;
     float ki_current = kp_current *250*2*PI;
     float kp_speed = 1e-4;
     float ki_speed = kp_speed *2*2*PI;
 
-    float Ts = 100e-6;
+    PID_INIT(pid_current_d,Ts   , kp_current,ki_current,0.0, MOD_INDEX*2/__sqrt(3),-MOD_INDEX*2/__sqrt(3), 0.0,0.0);
+    PID_INIT(pid_current_q,Ts   , kp_current,ki_current,0.0, MOD_INDEX*2/__sqrt(3),-MOD_INDEX*2/__sqrt(3), 0.0,0.0);
+    PID_INIT(pid_speed    ,Ts*10, kp_speed  ,ki_speed  ,0.0, 0.0                  ,0.0                  , 0.0,0.0);
 
-    PID_INIT(pid_current_d,Ts   , kp_current,ki_current,0.0, 2/__sqrt(3),-2/__sqrt(3), 0.0,0.0);
-    PID_INIT(pid_current_q,Ts   , kp_current,ki_current,0.0, 2/__sqrt(3),-2/__sqrt(3), 0.0,0.0);
-    PID_INIT(pid_speed    ,Ts*10, kp_speed  ,ki_speed  ,0.0, 1.0        ,-1.0        , 0.0,0.0);
-
-    inv_setup();
-    eqep_setup();
+    eqep_setup(Ts*10);
+    inv_setup(Ts);
 }
 
 static void print_float(char *str, float y)
