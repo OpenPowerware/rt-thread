@@ -1,6 +1,126 @@
 #include "board.h"
 
 extern interrupt void main_isr(void);
+static void pwm_setup(void);
+static void adc_setup(void);
+
+union adc_union
+{
+    uint32_t all;
+    struct 
+    {
+        uint16_t channel:4;
+        uint16_t soc:4;
+        uint16_t trigger:5;
+        uint16_t adcx:3;
+        uint16_t ACQPS:8;
+        uint16_t protect:2;
+        uint16_t inten:1;
+        uint16_t resrv:5;
+    } bit;
+};
+
+typedef struct 
+{
+    union adc_union adc_set;
+    int16_t th_low;
+    int16_t th_high;
+} adc_param_t;
+
+union pwm_union {
+    uint32_t  all;
+    struct {
+        uint16_t blank:7;
+        uint16_t hspdiv:3;
+        uint16_t div:3;
+        uint16_t trigger_B:3;
+        uint16_t trigger_A:3;
+        uint16_t data_type:2;
+        uint16_t input:3;
+        uint16_t mode:2;
+        uint16_t sync:2;
+        uint16_t pwmx:4;
+    } bit;
+};
+
+typedef struct {
+    union pwm_union pwm_set;
+    uint16_t base_period;
+    uint16_t dead_time;
+    uint16_t default_phase;
+    uint16_t default_duty;
+    float period_pu;
+    float duty_pu;
+    float phase_pu;
+} pwm_param_t;
+
+int16_t pwm_pin_table[] = {
+    -1,         //EPWM0
+    145,        //EPWM1
+    147,        //EPWM2
+    149,        //EPWM3
+    151,        //EPWM4
+    -1,         //EPWM5
+    -1,         //EPWM6
+    -1,         //EPWM7
+    -1,         //EPWM8
+    16,         //EPWM9
+    18,         //EPWM10
+    20,         //EPWM11
+    22,         //EPWM12
+};
+
+int16_t pwm_mux_table[] = {
+    -1,        //EPWM0
+    1,         //EPWM1
+    1,         //EPWM2
+    1,         //EPWM3
+    1,         //EPWM4
+    1,         //EPWM5
+    1,         //EPWM6
+    1,         //EPWM7
+    1,         //EPWM8
+    5,         //EPWM9
+    5,         //EPWM10
+    5,         //EPWM11
+    5,         //EPWM12
+};
+
+#define PWM_PIN(x) EPWM##x
+
+#define SOC_CONFIG(adc_reg, param, soc_num) \
+    do { \
+        adc_reg->ADCSOC##soc_num##CTL.bit.CHSEL = param->adc_set.bit.channel - 1; \
+        adc_reg->ADCSOC##soc_num##CTL.bit.ACQPS = param->adc_set.bit.ACQPS; \
+        adc_reg->ADCSOC##soc_num##CTL.bit.TRIGSEL = param->adc_set.bit.trigger + 4; \
+    } while(0)  
+
+#define PPB_CONFIG(adc_reg, param, ppb_num) \
+    do { \
+        adc_reg->ADCPPB##ppb_num##CONFIG.bit.CONFIG = 0; \
+        adc_reg->ADCPPB##ppb_num##OFFREF = 0; \
+        \
+        if (param->adc_set.bit.protect == 1) { \
+            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = 1; \
+            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = 1; \
+        } \
+        else if (param->adc_set.bit.protect == 2) { \
+            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = 1; \
+            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = 0; \
+        } \
+        else if (param->adc_set.bit.protect == 3) { \
+            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = 0; \
+            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = 1; \
+        } \
+        else { \
+            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPHI = 0; \
+            adc_reg->ADCEVTSEL.bit.PPB##ppb_num##TRIPLO = 0; \
+        } \
+        \
+        adc_reg->ADCPPB##ppb_num##TRIPHI.bit.LIMITHI = param->th_high; \
+        adc_reg->ADCPPB##ppb_num##TRIPLO.bit.LIMITLO = param->th_low; \
+    } while(0)
+
 
 void inv_set_duty(abc_dq_t * voltage)
 {
@@ -16,5 +136,206 @@ void inv_get_current(abc_dq_t * current)
 void inv_setup(void)
 {
 
+    adc_setup();
+    pwm_setup();
+
+    EALLOW;
+    PieVectTable.ADCA1_INT = &main_isr;
+    PieCtrlRegs.PIEIER1.bit.INTx1 = 1;
+    IER |= M_INT1;
+    EDIS;
 }
 
+static void pwm_config(pwm_param_t * param){
+
+    volatile struct EPWM_REGS *pwm_reg = &EPwm1Regs + param->pwm_set.bit.pwmx - 1;
+    int16_t pwmA_pin,pwmB_pin,pwm_mux;
+
+    //#1: synchronize and phase
+    if(param->pwm_set.bit.pwmx == 1){               //PWM1 is the sync source.
+        EPwm1Regs.TBCTL.bit.SYNCOSEL = 1;               //PWM1 generates sync pulse when CTR = zero.
+        SyncSocRegs.SYNCSELECT.bit.EPWM4SYNCIN = 0;     //select PWM1 as Sync Input Source for EPWM4:
+        SyncSocRegs.SYNCSELECT.bit.EPWM7SYNCIN = 0;     //select PWM1 as Sync Input Source for EPWM7:
+        SyncSocRegs.SYNCSELECT.bit.EPWM10SYNCIN = 0;    //select PWM1 as Sync Input Source for EPWM10:
+        pwm_reg->TBPHS.bit.TBPHS = 0;
+    }
+    else if(param->pwm_set.bit.sync == 0){
+        pwm_reg->TBCTL.bit.PHSEN = 0x0;
+    }
+    else if(param->pwm_set.bit.sync == 1){
+        if((int16_t)param->default_phase >= 0){
+            pwm_reg->TBCTL.bit.PHSDIR = 1;              //count-up, leading
+        }
+        else{
+            pwm_reg->TBCTL.bit.PHSDIR = 0;              //count-down, lagging
+        }
+        pwm_reg->TBPHS.bit.TBPHS = abs((int16_t)param->default_phase);
+        pwm_reg->TBCTL.bit.PHSEN = 0x1;                 //enable phase shift
+    }
+
+    //#2: counter mode
+    pwm_reg->TBCTL.bit.CTRMODE = 0x2;                   //up-down count mode.
+
+    //#3: output mode: normal or invert.
+    if(param->pwm_set.bit.mode == 1){                   //normal
+        pwm_reg->AQCTLA.bit.CAU = AQ_CLEAR;
+        pwm_reg->AQCTLA.bit.CAD = AQ_SET;
+        pwm_reg->AQCTLB.bit.CAU = AQ_SET;
+        pwm_reg->AQCTLB.bit.CAD = AQ_CLEAR;
+    }
+    else if(param->pwm_set.bit.mode == 2){              //inverted
+        pwm_reg->AQCTLA.bit.CAU = AQ_SET;
+        pwm_reg->AQCTLA.bit.CAD = AQ_CLEAR;
+        pwm_reg->AQCTLB.bit.CAU = AQ_CLEAR;
+        pwm_reg->AQCTLB.bit.CAD = AQ_SET;
+    }
+
+    //#4: clock division
+    pwm_reg->TBCTL.bit.CLKDIV = param->pwm_set.bit.div;
+    pwm_reg->TBCTL.bit.HSPCLKDIV = param->pwm_set.bit.hspdiv;
+
+    //#5: dead-time
+    pwm_reg->DBCTL.bit.POLSEL = 2;                  //EPWMxB is inverted
+    pwm_reg->DBCTL.bit.OUT_MODE = DB_FULL_ENABLE;   //both RED and FED active
+    pwm_reg->DBCTL.bit.IN_MODE = 0;                 //EPWMxA is the source
+    pwm_reg->DBRED.bit.DBRED = param->dead_time;
+    pwm_reg->DBFED.bit.DBFED = param->dead_time;
+
+    //#6: time base
+    pwm_reg->TBPRD = param->base_period;            //Set timer period
+    pwm_reg->TBCTR = 0x0000;                        //Clear the counter
+
+    //#7: compare
+    pwm_reg->CMPA.bit.CMPA = param->default_duty;
+
+    //#8: set trigger output
+    if((param->pwm_set.bit.trigger_A < 4) && (param->pwm_set.bit.trigger_A > 0)) {
+        pwm_reg->ETSEL.bit.SOCASEL = param->pwm_set.bit.trigger_A;    // 1:zero; 2: top; 3: zero & top
+        pwm_reg->ETPS.bit.SOCAPRD = 1;                      // Generate pulse on 1st event
+        pwm_reg->ETSEL.bit.SOCAEN = 1;                      // enable pwmA trigger SOC
+    }
+    if((param->pwm_set.bit.trigger_B < 4) && (param->pwm_set.bit.trigger_B > 0)) {
+        pwm_reg->ETSEL.bit.SOCBSEL = param->pwm_set.bit.trigger_B;
+        pwm_reg->ETPS.bit.SOCBPRD = 1;
+        pwm_reg->ETSEL.bit.SOCBEN = 1;
+    }
+
+    //#9: set digital comparator and trip zone
+    EALLOW;
+    pwm_reg->TZCLR.bit.OST=1;                   // Clear one-shot trip flag
+    pwm_reg->DCTRIPSEL.bit.DCAHCOMPSEL=3;       // Select TRIPIN4 (EpwmXBAR, linked with ADC PPB) as the source for DCAH
+    pwm_reg->TZDCSEL.bit.DCAEVT1=2;             // DCAEVT1 is generated when DCAH is high
+    pwm_reg->DCACTL.bit.EVT1SRCSEL=0;           // Source signal is unfiltered.
+    pwm_reg->DCACTL.bit.EVT1FRCSYNCSEL=1;       // DC input signal is not synced with TBCLK
+    pwm_reg->TZSEL.bit.DCAEVT1=1;               // Enable DCAEVT1 as one-shot-trip source for this ePWM module
+    pwm_reg->TZSEL.bit.CBC1=1;                  // Enable TZ1 as cycle-by-cycle trip: emulate external enable chip;
+    pwm_reg->TZSEL.bit.CBC2=1;                  // Enable TZ2 as cycle-by-cycle trip: for emergency stop;
+    pwm_reg->TZSEL.bit.CBC3=1;                  // Enable TZ3 as cycle-by-cycle trip: for emergency stop;
+    pwm_reg->TZCTL.bit.TZA=2;                   // EPWMxA will be forced low on a trip event.
+    pwm_reg->TZCTL.bit.TZB=2;                   // EPWMxB will be forced low on a trip event.
+    pwm_reg->ETCLR.all = 0xFFFF;                // Clear all events
+    EDIS;
+
+    //#10: set pin mux
+    pwmA_pin = pwm_pin_table[param->pwm_set.bit.pwmx];
+    pwmB_pin = pwmA_pin+1;
+    pwm_mux = pwm_mux_table[param->pwm_set.bit.pwmx];
+    GPIO_SetupPinMux(pwmA_pin,0,pwm_mux);
+    GPIO_SetupPinMux(pwmB_pin,0,pwm_mux);
+}
+
+static void adc_config(adc_param_t * param)
+{
+    volatile struct ADC_REGS *adc_reg = &AdcaRegs + param->adc_set.bit.adcx - 1;
+
+    EALLOW;
+
+    adc_reg->ADCCTL1.bit.ADCPWDNZ = 1; // Analog circuit power up
+    adc_reg->ADCCTL2.bit.PRESCALE = 0b0110; // set CLKDIV = 4, the max freq is 50MHz.
+    adc_reg->ADCSOCPRICTL.bit.SOCPRIORITY = 0x10; //10h All SOCs are in high priority mode, arbitrated by SOC number.
+    AdcSetMode((param->adc_set.bit.adcx-1), ADC_RESOLUTION_12BIT, ADC_SIGNALMODE_SINGLE);
+
+    //set soc
+    switch(param->adc_set.bit.soc){
+        case 1 :{       //soc0
+            SOC_CONFIG(adc_reg, param, 0); 
+            PPB_CONFIG(adc_reg, param, 1);
+            adc_reg->ADCINTSEL1N2.bit.INT1SEL = 0; //end of SOC0 will set INT1 flag
+            adc_reg->ADCINTSEL1N2.bit.INT1E = 1;   //enable INT1 flag
+            adc_reg->ADCINTFLGCLR.bit.ADCINT1 = 1; //make sure INT1 flag is cleared
+            break;
+        }
+        case 2 :{       //soc1
+            SOC_CONFIG(adc_reg, param, 1);
+            PPB_CONFIG(adc_reg, param, 2);
+            adc_reg->ADCINTSEL1N2.bit.INT2SEL = 1; //EOC1 will set INT2 flag
+            adc_reg->ADCINTSEL1N2.bit.INT2E = 1;   //enable INT2 flag
+            adc_reg->ADCINTFLGCLR.bit.ADCINT2 = 1; //make sure INT2 flag is cleared
+            break;
+        }
+        case 3 :{       //soc2
+            SOC_CONFIG(adc_reg, param, 2);
+            PPB_CONFIG(adc_reg, param, 3);
+            adc_reg->ADCINTSEL3N4.bit.INT3SEL = 2; //EOC2 will set INT3 flag
+            adc_reg->ADCINTSEL3N4.bit.INT3E = 1;   //enable INT3 flag
+            adc_reg->ADCINTFLGCLR.bit.ADCINT3 = 1; //make sure INT3 flag is cleared
+            break;
+        }
+        case 4 :{       //soc3
+            SOC_CONFIG(adc_reg, param, 3);
+            PPB_CONFIG(adc_reg, param, 4);
+            adc_reg->ADCINTSEL3N4.bit.INT4SEL = 3; //end of SOC3 will set INT4 flag
+            adc_reg->ADCINTSEL3N4.bit.INT4E = 1;   //enable INT4 flag
+            adc_reg->ADCINTFLGCLR.bit.ADCINT3 = 1; //make sure INT4 flag is cleared
+            break;
+        }
+    }
+
+    EDIS;
+}
+
+static void pwm_setup(void)
+{
+    pwm_param_t param;
+    param.pwm_set.bit.sync = 0;
+    param.pwm_set.bit.mode = 1; //non-inverted
+    param.pwm_set.bit.div = 0;
+    param.pwm_set.bit.hspdiv = 0;
+    param.pwm_set.bit.trigger_A = 1;
+    param.pwm_set.bit.trigger_B = 1;
+    param.dead_time = 5;
+    param.base_period = 10000;
+    param.default_phase = 0;
+    param.default_duty = 5000;
+
+    int i;
+    for (i = 4; i <= 6; i++) {
+        param.pwm_set.bit.pwmx = i;
+        pwm_config(&param);
+    }
+}
+
+static void adc_setup(void)
+{
+    adc_param_t param;
+
+    param.adc_set.bit.ACQPS = 0x15;
+    param.adc_set.bit.trigger = 0xB; //PWM4A
+    param.adc_set.bit.inten = 1;
+    param.adc_set.bit.protect = 1;
+    param.adc_set.bit.soc = 1;
+    param.adc_set.bit.channel = 4;
+    param.th_low  = 2048-1500;
+    param.th_high = 2048+1500;
+
+    int i;
+    for(i = 1; i<4; i++)
+    {
+        param.adc_set.bit.adcx = i;
+        adc_config(&param);
+    }
+
+    param.adc_set.bit.adcx = 4; //ADC D
+    param.adc_set.bit.channel = 15;
+    adc_config(&param);
+}
