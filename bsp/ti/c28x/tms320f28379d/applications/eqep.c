@@ -1,6 +1,5 @@
 #include "board.h"
 
-#define MUX_EQEP    1
 #define PIN_EQEP_A  20
 #define PIN_EQEP_B  21
 #define PIN_EQEP_I  99
@@ -40,9 +39,9 @@ exit:
 
 void eqep_setup(float Ts)
 {
-    gpio_config(PIN_EQEP_A,MUX_EQEP,GPIO_MUX_CPU1,GPIO_LOW,GPIO_INPUT,GPIO_SYNC);
-    gpio_config(PIN_EQEP_B,MUX_EQEP,GPIO_MUX_CPU1,GPIO_LOW,GPIO_INPUT,GPIO_SYNC);
-    gpio_config(PIN_EQEP_I,MUX_EQEP,GPIO_MUX_CPU1,GPIO_LOW,GPIO_INPUT,GPIO_SYNC);
+    gpio_config(PIN_EQEP_A,1,GPIO_MUX_CPU1,GPIO_LOW,GPIO_INPUT,GPIO_SYNC);
+    gpio_config(PIN_EQEP_B,1,GPIO_MUX_CPU1,GPIO_LOW,GPIO_INPUT,GPIO_SYNC);
+    gpio_config(PIN_EQEP_I,1,GPIO_MUX_CPU1,GPIO_LOW,GPIO_INPUT,GPIO_SYNC);
 
     qep_speed_float = 0.0;
     qep_old_position = EQep1Regs.QPOSCNT; // do not reset the counter, but keep it
@@ -53,14 +52,14 @@ void eqep_setup(float Ts)
 
     qep_total_counts_float = (float)(2000*4);
     qep_angle_coef_float = 1.0 / qep_total_counts_float;            //mech angle, pu
-    qep_speed_coef_float = qep_angle_coef_float * (200e6 / 200000); //mech speed, Hz
+    qep_speed_coef_float = qep_angle_coef_float / Ts;               //mech speed, Hz
 
     EQep1Regs.QUTMR = 0;
     EQep1Regs.QUPRD = 200000000*Ts;       // 200000 Unit Timer for 1000Hz at 200 MHz SYSCLKOUT
     EQep1Regs.QDECCTL.bit.QSRC = 0;       // QEP quadrature count mode
     EQep1Regs.QEPCTL.bit.FREE_SOFT = 2;
     EQep1Regs.QEPCTL.bit.PCRM = 0;        // PCRM=00 mode - QPOSCNT reset on index event
-    EQep1Regs.QPOSMAX = (uint32_t)2000*4-1;         // 2000 line
+    EQep1Regs.QPOSMAX = 2000*4-1;         // 2000 line
     EQep1Regs.QCAPCTL.bit.UPPS = 0;       // 1/2^n for unit position event
     EQep1Regs.QCAPCTL.bit.CCPS = 0;       // 1/2^n for CAP clock
     EQep1Regs.QCAPCTL.bit.CEN = 0;        // QEP Capture Disable
