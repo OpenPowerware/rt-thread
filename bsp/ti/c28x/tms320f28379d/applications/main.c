@@ -22,7 +22,7 @@
 
 float ppair = 4;
 float rpm = 6000;
-float Ts = 100e-6;
+float Ts = 10e-6;
 float speed_cmd = 20.0;
 float torque_cmd = 0.0;
 float speed_m;
