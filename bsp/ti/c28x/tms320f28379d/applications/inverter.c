@@ -139,20 +139,33 @@ void inv_set_duty(abc_dq_t * voltage, float period)
     float abc_min;
     float abc_max;
     float abc_shf;
+    float period_h;
+    int16_t period_i;
+    int16_t a,b,c;
 
     abc_max = __fmax(voltage->a,voltage->b);
     abc_max = __fmax(abc_max,voltage->c);
 
-    abc_min = __fmax(voltage->a,voltage->b);
-    abc_min = __fmax(abc_min,voltage->c);
+    abc_min = __fmin(voltage->a,voltage->b);
+    abc_min = __fmin(abc_min,voltage->c);
 
     abc_shf = -(abc_max + abc_min)/2.0 + 1.0;
 
-    period = period / 2.0;
 
-    EPwm4Regs.CMPA.bit.CMPA = (voltage->a + abc_shf) * period;
-    EPwm5Regs.CMPA.bit.CMPA = (voltage->b + abc_shf) * period;
-    EPwm6Regs.CMPA.bit.CMPA = (voltage->c + abc_shf) * period;
+    period_h = period / 2.0;
+    period_i = (int16_t) period - 10;
+
+    a = (voltage->a + abc_shf) * period_h;
+    b = (voltage->b + abc_shf) * period_h;
+    c = (voltage->c + abc_shf) * period_h;
+
+    a = a<10 ? 10:a; a = a>period_i ? period_i:a;
+    b = b<10 ? 10:b; b = b>period_i ? period_i:b;
+    c = c<10 ? 10:c; c = c>period_i ? period_i:c;
+
+    EPwm4Regs.CMPA.bit.CMPA = a;
+    EPwm5Regs.CMPA.bit.CMPA = b;
+    EPwm6Regs.CMPA.bit.CMPA = c;
 }
 
 void inv_get_current(abc_dq_t * current)

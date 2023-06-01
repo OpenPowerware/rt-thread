@@ -8,7 +8,7 @@
 #ifndef APPLICATIONS_APPLICATIONS_H_
 #define APPLICATIONS_APPLICATIONS_H_
 
-#define MOD_INDEX 0.9
+#define MOD_INDEX 1.0
 
 extern float eqep_get_angle();
 extern float eqep_get_speed();
