@@ -46,11 +46,11 @@ void eqep_setup(float Ts)
     qep_speed_float = 0.0;
     qep_old_position = EQep1Regs.QPOSCNT; // do not reset the counter, but keep it
 
-    qep_total_counts_int32 = (int32_t)(2000*4);
-    qep_half_counts_int32 = (int32_t)(2000*2);
+    qep_total_counts_int32 = (int32_t)(1000*4);
+    qep_half_counts_int32 = (int32_t)(1000*2);
     qep_half_counts_int32_minus = -qep_half_counts_int32;
 
-    qep_total_counts_float = (float)(2000*4);
+    qep_total_counts_float = (float)(1000*4);
     qep_angle_coef_float = 1.0 / qep_total_counts_float;            //mech angle, pu
     qep_speed_coef_float = qep_angle_coef_float / Ts;               //mech speed, Hz
 
@@ -59,7 +59,7 @@ void eqep_setup(float Ts)
     EQep1Regs.QDECCTL.bit.QSRC = 0;       // QEP quadrature count mode
     EQep1Regs.QEPCTL.bit.FREE_SOFT = 2;
     EQep1Regs.QEPCTL.bit.PCRM = 0;        // PCRM=00 mode - QPOSCNT reset on index event
-    EQep1Regs.QPOSMAX = 2000*4-1;         // 2000 line
+    EQep1Regs.QPOSMAX = 1000*4-1;         // 2000 line
     EQep1Regs.QCAPCTL.bit.UPPS = 0;       // 1/2^n for unit position event
     EQep1Regs.QCAPCTL.bit.CCPS = 0;       // 1/2^n for CAP clock
     EQep1Regs.QCAPCTL.bit.CEN = 0;        // QEP Capture Disable

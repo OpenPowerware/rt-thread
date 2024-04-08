@@ -43,13 +43,13 @@ interrupt void main_isr(void)
     speed_m = eqep_get_speed();
     angle_e = eqep_get_angle() * ppair + angle_e_cal;
 
-//    if(!(count % 10))
-//    {
-//        /* speed pid control */
-//        pid_speed.u = speed_cmd - speed_m;
-//        PID_UPDATE(pid_speed);
-//        torque_cmd = pid_speed.y;
-//    }
+    if(!(count % 10))
+    {
+        /* speed pid control */
+        pid_speed.u = speed_cmd - speed_m;
+        PID_UPDATE(pid_speed);
+        torque_cmd = pid_speed.y;
+    }
 
     /* current measure and transformation */
     inv_get_current(&current);
@@ -88,12 +88,12 @@ int main(void)
 
     float kp_current = Lpu * 500;
     float ki_current = kp_current *100*2*PI;
-    float kp_speed = 1e-4;
-    float ki_speed = kp_speed *2*2*PI;
+    float kp_speed = 0.1;
+    float ki_speed = 1e-5;
 
     PID_INIT(pid_current_d,Ts   , kp_current,ki_current,0.0, MOD_INDEX*2.0/__sqrt(3.0),-MOD_INDEX*2.0/__sqrt(3.0), 0.0,0.0);
     PID_INIT(pid_current_q,Ts   , kp_current,ki_current,0.0, MOD_INDEX*2.0/__sqrt(3.0),-MOD_INDEX*2.0/__sqrt(3.0), 0.0,0.0);
-    PID_INIT(pid_speed    ,Ts*10, kp_speed  ,ki_speed  ,0.0, 0.0                      ,0.0                       , 0.0,0.0);
+    PID_INIT(pid_speed    ,Ts*10, kp_speed  ,ki_speed  ,0.0, 1                      ,-1                       , 0.0,0.0);
 
     eqep_setup(1e-3);
     inv_setup(Ts);
