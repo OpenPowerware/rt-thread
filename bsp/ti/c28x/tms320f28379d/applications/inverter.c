@@ -180,7 +180,7 @@ void inv_setup(float Ts)
     adc_setup();
     pwm_setup(Ts);
 
-    gpio_config(PIN_INV_EN,0,GPIO_MUX_CPU1,GPIO_HIGH,GPIO_OUTPUT,GPIO_SYNC);
+//    gpio_config(PIN_INV_EN,0,GPIO_MUX_CPU1,GPIO_HIGH,GPIO_OUTPUT,GPIO_SYNC);
 
     EALLOW;
     PieVectTable.ADCA1_INT = &main_isr;

@@ -20,16 +20,20 @@
 #include "board.h"
 #include "applications.h"
 
-float ppair = 4;
+float ppair = 2;
 float rpm = 6000;
 float Ts = 10e-6;
 float speed_cmd = 20.0;
 float torque_cmd = 0.0;
 float speed_m;
 float angle_e;
-float angle_e_cal = 0.04;
+float angle_e_cal = 0;
 float time = 0.0;
 int count = 0;
+
+float vd_ref = 0.1;
+float vq_ref = 0.5;
+
 abc_dq_t current;
 abc_dq_t voltage;
 pid_ctl_t pid_current_d;
@@ -62,8 +66,10 @@ interrupt void main_isr(void)
     PID_UPDATE(pid_current_q);
 
     /* voltage command inverse transformation */
-    voltage.d = pid_current_d.y;
-    voltage.q = pid_current_q.y;
+//    voltage.d = pid_current_d.y;
+//    voltage.q = pid_current_q.y;
+    voltage.d = vd_ref;
+    voltage.q = vq_ref;
     DQ2ABC(voltage,angle_e);
 
     /* inverter pwm control */
