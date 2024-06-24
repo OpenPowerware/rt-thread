@@ -170,9 +170,9 @@ void inv_set_duty(abc_dq_t * voltage, float period)
 
 void inv_get_current(abc_dq_t * current)
 {
-    current->a = ((int16_t)(0x08C4 - AdccResultRegs.ADCRESULT0))/800.0;
-    current->b = ((int16_t)(0x08C6 - AdcbResultRegs.ADCRESULT0))/800.0;
-    current->c = ((int16_t)(0x08C0 - AdcaResultRegs.ADCRESULT0))/800.0;
+    current->a = ((int16_t)(AdccResultRegs.ADCRESULT0 - 0x750))/800.0;
+    current->b = ((int16_t)(AdcbResultRegs.ADCRESULT0 - 0x750))/800.0;
+    current->c = ((int16_t)(AdcaResultRegs.ADCRESULT0 - 0x750))/800.0;
 }
 
 void inv_setup(float Ts)

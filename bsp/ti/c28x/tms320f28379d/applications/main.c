@@ -34,6 +34,8 @@ int count = 0;
 float vd_ref = 0.1;
 float vq_ref = 0.5;
 
+float iq_ref = 0.5;
+
 abc_dq_t current;
 abc_dq_t voltage;
 pid_ctl_t pid_current_d;
@@ -62,14 +64,17 @@ interrupt void main_isr(void)
     /* current (torque) pid control */
     pid_current_d.u = 0.0 - current.d;
     pid_current_q.u = torque_cmd - current.q;
+//    pid_current_q.u = iq_ref - current.q;
+//    pid_current_d.u = 0;
+//    pid_current_q.u = 0.5;
     PID_UPDATE(pid_current_d);
     PID_UPDATE(pid_current_q);
 
     /* voltage command inverse transformation */
-//    voltage.d = pid_current_d.y;
-//    voltage.q = pid_current_q.y;
-    voltage.d = vd_ref;
-    voltage.q = vq_ref;
+    voltage.d = pid_current_d.y;
+    voltage.q = pid_current_q.y;
+//    voltage.d = vd_ref;
+//    voltage.q = vq_ref;
     DQ2ABC(voltage,angle_e);
 
     /* inverter pwm control */
